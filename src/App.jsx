@@ -6,6 +6,7 @@ import ClientBill from './routes/ClientBill';
 import OwnerApp from './routes/OwnerApp';
 import TrackOrder from './routes/TrackOrder';
 import ShippingLabel from './routes/ShippingLabel';
+import OrderDetails from './routes/OrderDetails';
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
       <Route path="/client/order/:invoiceId/bill" element={<ClientBill />} />
       <Route path="/client/order/:invoiceId/label" element={<ShippingLabel />} />
       <Route path="/track" element={<TrackOrder />} />
+      <Route path="/order-details/:invoiceId" element={<OrderDetails />} />
       <Route path="/owner" element={<OwnerApp />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

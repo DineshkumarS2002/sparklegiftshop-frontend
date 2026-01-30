@@ -1,25 +1,44 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { clientGetOrder } from '../api/clientApi';
+import { clientGetOrder, clientFetchOrdersByPhone } from '../api/clientApi';
 
 export default function TrackOrder() {
-    const [billNo, setBillNo] = useState('');
-    const [order, setOrder] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [searched, setSearched] = useState(false);
 
     const onTrack = async (e) => {
         if (e) e.preventDefault();
-        if (!billNo.trim()) return;
+        if (!searchTerm.trim()) return;
 
         setLoading(true);
         setError('');
-        setOrder(null);
+        setOrders([]);
+        setSearched(true);
         try {
-            const data = await clientGetOrder(billNo.trim());
-            setOrder(data);
+            // First try to check if it looks like an invoice ID (e.g. has hyphen)
+            if (searchTerm.includes('-')) {
+                const data = await clientGetOrder(searchTerm.trim());
+                setOrders([data]);
+            } else {
+                // Assume it might be a phone number
+                const data = await clientFetchOrdersByPhone(searchTerm.trim());
+                if (data && data.length > 0) {
+                    setOrders(data);
+                } else {
+                    // If no phone results, try as ID fallback just in case
+                    try {
+                        const direct = await clientGetOrder(searchTerm.trim());
+                        setOrders([direct]);
+                    } catch {
+                        setError('No orders found for this Phone Number or Invoice ID.');
+                    }
+                }
+            }
         } catch (err) {
-            setError('Bill not found. Please check the number and try again.');
+            setError('No orders found. Please check the details and try again.');
         } finally {
             setLoading(false);
         }
@@ -28,22 +47,22 @@ export default function TrackOrder() {
     return (
         <div className="container py-5 min-vh-100 d-flex flex-column align-items-center">
             <div className="text-center mb-5">
-                <h1 className="fw-bold text-primary mb-2">Track Your Bill</h1>
-                <p className="text-muted">Enter your bill number to see the current status</p>
+                <h1 className="fw-bold text-primary mb-2">Order Details</h1>
+                <p className="text-muted">Enter your registered Phone Number or Invoice ID</p>
             </div>
 
-            <div className="w-100" style={{ maxWidth: '500px' }}>
+            <div className="w-100" style={{ maxWidth: '600px' }}>
                 <form onSubmit={onTrack} className="card border-0 shadow-sm mb-4">
                     <div className="card-body p-4">
                         <div className="mb-3">
-                            <label className="form-label small fw-bold text-uppercase text-muted">Bill Number</label>
+                            <label className="form-label small fw-bold text-uppercase text-muted">Phone Number / Bill No</label>
                             <div className="input-group">
                                 <input
                                     type="text"
                                     className="form-control form-control-lg border-primary shadow-none"
-                                    placeholder="e.g. 290126-001"
-                                    value={billNo}
-                                    onChange={(e) => setBillNo(e.target.value)}
+                                    placeholder="e.g. 9876543210 or 300126-001"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                                 <button className="btn btn-primary px-4" type="submit" disabled={loading}>
                                     {loading ? <span className="spinner-border spinner-border-sm"></span> : <><i className="bi bi-search me-1"></i> Track</>}
@@ -51,7 +70,7 @@ export default function TrackOrder() {
                             </div>
                         </div>
                         <div className="small text-muted text-center">
-                            You can find your Bill No on your order confirmation page or WhatsApp message.
+                            Track by registered mobile number for best results.
                         </div>
                     </div>
                 </form>
@@ -62,59 +81,55 @@ export default function TrackOrder() {
                     </div>
                 )}
 
-                {order && (
-                    <div className="card border-0 shadow border-top border-4 border-primary animate__animated animate__fadeIn">
+                {searched && orders.length === 0 && !error && !loading && (
+                    <div className="text-center text-muted py-4">
+                        <i className="bi bi-inbox fs-1 d-block mb-2"></i>
+                        No orders found.
+                    </div>
+                )}
+
+                {orders.map((order) => (
+                    <div key={order.id} className="card border-0 shadow-sm border-start border-4 border-primary mb-3 animate__animated animate__fadeIn">
                         <div className="card-body p-4">
-                            <div className="d-flex justify-content-between align-items-start mb-4 border-bottom pb-3">
+                            <div className="d-flex justify-content-between align-items-center mb-3">
                                 <div>
-                                    <h5 className="fw-bold mb-1">Status for {order.invoiceId}</h5>
-                                    <p className="small text-muted mb-0">{new Date(order.createdAt).toLocaleString()}</p>
+                                    <h5 className="fw-bold mb-0 text-primary">{order.invoiceId}</h5>
+                                    <small className="text-muted">{new Date(order.createdAt).toLocaleString()}</small>
                                 </div>
-                                <div className={`badge fs-6 px-3 py-2 rounded-pill ${order.dispatched ? 'bg-success' : 'bg-warning text-dark'}`}>
-                                    {order.dispatched ? <><i className="bi bi-check2-circle me-1"></i> DISPATCHED</> : <><i className="bi bi-clock me-1"></i> PENDING</>}
-                                </div>
+                                <span className={`badge rounded-pill px-3 py-2 ${order.dispatched ? 'bg-success' : 'bg-warning text-dark'}`}>
+                                    {order.dispatched ? 'DISPATCHED' : 'PENDING'}
+                                </span>
                             </div>
 
-                            <div className="mb-4">
-                                <div className="d-flex align-items-center mb-3">
-                                    <div className={`rounded-circle d-flex align-items-center justify-content-center bg-primary text-white me-3`} style={{ width: '40px', height: '40px' }}>
-                                        <i className="bi bi-bag-check"></i>
-                                    </div>
-                                    <div>
-                                        <h6 className="mb-0 fw-bold">Order Received</h6>
-                                        <small className="text-muted">We have started preparing your gifts</small>
-                                    </div>
+                            <div className="row g-2 mb-3">
+                                <div className="col-6">
+                                    <small className="text-muted d-block uppercase" style={{ fontSize: '0.7rem' }}>CUSTOMER</small>
+                                    <span className="fw-medium">{order.customerName}</span>
                                 </div>
-
-                                <div className="d-flex align-items-center mb-0 opacity-100">
-                                    <div className={`rounded-circle d-flex align-items-center justify-content-center ${order.dispatched ? 'bg-success' : 'bg-light text-secondary'} me-3`} style={{ width: '40px', height: '40px' }}>
-                                        <i className="bi bi-truck"></i>
-                                    </div>
-                                    <div>
-                                        <h6 className={`mb-0 fw-bold ${order.dispatched ? 'text-success' : 'text-muted'}`}>Out for Delivery</h6>
-                                        <small className="text-muted">{order.dispatched ? 'Your items have been dispatched' : 'Pending dispatch'}</small>
-                                    </div>
+                                <div className="col-6 text-end">
+                                    <small className="text-muted d-block uppercase" style={{ fontSize: '0.7rem' }}>AMOUNT</small>
+                                    <span className="fw-bold text-dark">₹{order.total?.toFixed(2)}</span>
                                 </div>
                             </div>
 
                             <div className="bg-light p-3 rounded mb-3">
-                                <h6 className="fw-bold small text-uppercase text-muted mb-2">Details</h6>
-                                <div className="d-flex justify-content-between mb-1">
-                                    <span className="text-muted">Customer</span>
-                                    <span className="fw-medium">{order.customerName}</span>
-                                </div>
-                                <div className="d-flex justify-content-between">
-                                    <span className="text-muted">Total Amount</span>
-                                    <span className="fw-bold text-primary">₹{order.total?.toFixed(2)}</span>
+                                <div className="d-flex align-items-center">
+                                    <i className={`fs-4 me-3 bi ${order.dispatched ? 'bi-truck text-success' : 'bi-hourglass-split text-warning'}`}></i>
+                                    <div>
+                                        <strong>{order.dispatched ? 'Out for Delivery' : 'Processing Order'}</strong>
+                                        <div className="small text-muted">{order.dispatched ? 'Your order is on the way!' : 'We are preparing your package.'}</div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="d-grid gap-2">
-                                <Link to={`/client/order/${order.invoiceId}`} className="btn btn-outline-primary btn-sm rounded-pill">View Full Summary</Link>
+                            <div className="d-grid">
+                                <Link to={`/order-details/${order.invoiceId}`} className="btn btn-outline-primary btn-sm rounded-pill fw-bold">
+                                    View Full Details <i className="bi bi-arrow-right ms-1"></i>
+                                </Link>
                             </div>
                         </div>
                     </div>
-                )}
+                ))}
             </div>
 
             <div className="mt-5">

@@ -174,8 +174,8 @@ export default function ClientApp() {
     }
   };
 
-  /* Delivery Fee Logic: Below ₹500 = ₹50, Above ₹500 = Free (Based on original items total) */
-  const deliveryFee = cart.total < 500 && cart.items.length > 0 ? 50 : 0;
+  /* Delivery Fee Logic: (Testing: set to 0) */
+  const deliveryFee = 0; // cart.total < 500 && cart.items.length > 0 ? 50 : 0;
   const finalTotal = Math.max(0, (cart.total - discount) + deliveryFee);
 
   const onCheckout = () => {
@@ -194,6 +194,7 @@ export default function ClientApp() {
   const onPlaceOrder = async () => {
     if (!cart.items.length) return setStatus('Cart is empty');
     if (!orderForm.customerName || !orderForm.phone) return setStatus('Enter customer details');
+    if (orderForm.phone.length !== 10) return setStatus('Phone number must be exactly 10 digits');
 
     setLoading(true);
     try {
@@ -209,18 +210,11 @@ export default function ClientApp() {
 
       setCreatedOrder(order);
 
-      // 2. Handle Payment Flow
-      if (orderForm.paymentMethod === 'upi') {
-        // Show Payment Screen (QR)
-        setPaymentStep(true);
-        setLoading(false);
-        // Simulate "2 minutes wait" by just keeping them here. 
-        // Realistically, we provide a button to proceed after paying.
-      } else {
-        // COD: Direct Redirect
+      // Handle Redirect
+      if (orderForm.paymentMethod === 'cod') {
         redirectToWhatsApp(order);
-        navigate(`/client/order/${order.invoiceId}`);
       }
+      navigate(`/client/order/${order.invoiceId}`);
     } catch {
       setStatus('Could not create order');
       setLoading(false);
@@ -228,13 +222,17 @@ export default function ClientApp() {
   };
 
   const redirectToWhatsApp = (order) => {
-    const itemsList = cart.items.map(i => `- ${i.product.name} x${i.quantity} (₹${i.lineTotal})`).join('\n');
+    const itemsList = cart.items.map(i => `- ${i.product.name} x${i.quantity}`).join('\n');
     const deliveryStr = deliveryFee > 0 ? `₹${deliveryFee}` : 'FREE';
-    const msg = `*Invoice No: ${order.invoiceId}*\n\nCustomer: ${orderForm.customerName}\nPhone: ${orderForm.phone}\nAddress: ${orderForm.address}\n\n*Items:*\n${itemsList}\n\nSubtotal: ₹${cart.total}\nDiscount Applied: ₹${discount.toFixed(2)}\nDelivery Fee: ${deliveryStr}\n*Final Amount: ₹${finalTotal.toFixed(2)}*\nPayment: ${orderForm.paymentMethod.toUpperCase()}`;
 
-    const phone = settings.whatsappNumber ? settings.whatsappNumber.replace(/\D/g, '') : '';
-    if (phone) {
-      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    const msg = `*--- Sparkle Gift Shop ---*\n\nI have just placed an order. Please confirm it.\n\n*Order Details:*\n----------------\n*Invoice:* ${order.invoiceId}\n*Items:*\n${itemsList}\n\n*Bill Summary:*\n----------------\nSubtotal: ₹${cart.total}\nDiscount: ₹${discount.toFixed(2)}\nDelivery: ${deliveryFee > 0 ? `₹${deliveryFee}` : 'FREE'}\n*Total Amount: ₹${finalTotal.toFixed(2)}*\n\n*Customer Info:*\n----------------\nName: ${order.customerName}\nPhone: ${order.phone}\nAddress: ${order.address}\n\nTrack Link: ${window.location.origin}/order-details/${order.invoiceId}`;
+
+    const ownerPhone = settings.whatsappNumber ? settings.whatsappNumber.replace(/\D/g, '') : '';
+    // Use 91 prefix if it's a 10 digit number
+    const targetPhone = ownerPhone.length === 10 ? '91' + ownerPhone : ownerPhone;
+
+    if (targetPhone) {
+      window.open(`https://wa.me/${targetPhone}?text=${encodeURIComponent(msg)}`, '_blank');
     }
   };
 
@@ -257,7 +255,7 @@ export default function ClientApp() {
       {/* Header & Cart Toggle */}
       <header className="navbar navbar-expand-lg bg-white shadow-sm border-bottom fixed-top px-3 px-md-5 py-3" style={{ zIndex: 1050 }}>
         <div className="container-fluid p-0 d-flex justify-content-between align-items-center">
-          <Link to="/" className="d-flex align-items-center text-decoration-none">
+          <Link to="/" className="d-flex align-items-center text-decoration-none" onClick={() => setStep('shop')}>
             <img src={logo} alt="Logo" className="rounded-circle me-2 shadow-sm" style={{ width: 62, height: 62, objectFit: 'cover' }} />
             <div>
               <h1 className="h2 fw-bold mb-0 text-dark">Sparkle Gift Shop</h1>
@@ -266,8 +264,8 @@ export default function ClientApp() {
           </Link>
 
           <div className="d-flex align-items-center gap-2">
-            <Link to="/track" className="btn btn-sm btn-light border rounded-pill px-3 fw-bold text-primary text-decoration-none d-none d-md-inline-block">
-              <i className="bi bi-search me-1"></i> Track Invoice
+            <Link to="/track" className="btn btn-sm btn-light border rounded-pill px-3 fw-bold text-primary text-decoration-none">
+              <i className="bi bi-receipt"></i> <span className="d-none d-md-inline ms-1">Order Details</span>
             </Link>
 
             {/* Burger Button for Cart */}
@@ -473,7 +471,20 @@ export default function ClientApp() {
                   </div>
                   <div className="mb-3">
                     <label className="form-label small fw-bold text-uppercase text-muted">Phone Number</label>
-                    <input className="form-control" value={orderForm.phone} onChange={(e) => setOrderForm(f => ({ ...f, phone: e.target.value }))} placeholder="e.g. 9876543210" />
+                    <input
+                      className="form-control"
+                      type="tel"
+                      maxLength={10}
+                      value={orderForm.phone}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        if (val.length <= 10) {
+                          setOrderForm(f => ({ ...f, phone: val }));
+                        }
+                      }}
+                      placeholder="e.g. 9876543210"
+                    />
+                    <div className="smallest text-muted mt-1">Exactly 10 digits required</div>
                   </div>
                   <div className="mb-3">
                     <label className="form-label small fw-bold text-uppercase text-muted">Delivery Address</label>
@@ -507,42 +518,7 @@ export default function ClientApp() {
           </div>
         )}
 
-        {/* UPI Payment Overlay / Step */}
-        {step === 'checkout' && paymentStep && (
-          <div className="row justify-content-center">
-            <div className="col-md-8 col-lg-6">
-              <div className="card border-0 shadow-lg text-center border-primary border-2">
-                <div className="card-header bg-primary text-white py-3">
-                  <h4 className="mb-0 fw-bold">Scan to Pay</h4>
-                </div>
-                <div className="card-body p-5">
-                  <div className="mb-4">
-                    <p className="lead fw-bold mb-1">Total Amount: ₹{finalTotal.toFixed(2)}</p>
-                    <p className="text-muted small">Invoice No: {createdOrder?.invoiceId}</p>
-                  </div>
-
-                  {settings.upiQrUrl ? (
-                    <div className="bg-light p-3 rounded d-inline-block border mb-4">
-                      <img src={settings.upiQrUrl} alt="UPI QR" style={{ width: '100%', maxWidth: '280px' }} />
-                    </div>
-                  ) : (
-                    <div className="alert alert-warning">No QR Code available. Ask owner for details.</div>
-                  )}
-
-                  <div className="alert alert-info small">
-                    Please pay using any UPI App (GPay, PhonePe, Paytm).<br />
-                    <strong>Do not verify manually, click below after paying.</strong>
-                  </div>
-
-                  <button className="btn btn-success w-100 py-3 fw-bold fs-5 shadow-sm" onClick={onPaymentDone}>
-                    I Have Paid (Confirm Order)
-                  </button>
-                  <p className="text-muted small mt-3 fst-italic">Redirecting to WhatsApp for confirmation...</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Redirecting to ClientOrder now for payment tracking and summary */}
       </div>
     </div>
   );

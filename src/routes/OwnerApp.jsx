@@ -16,6 +16,8 @@ import {
   ownerDeleteCoupon,
   ownerDeleteOrder,
   ownerToggleDispatch,
+  ownerTogglePayment,
+  API_BASE_URL
 } from '../api/ownerApi';
 import { Link } from 'react-router-dom';
 import { Bar, Doughnut } from 'react-chartjs-2';
@@ -184,52 +186,15 @@ function SettingsPanel({ settings, setSettings, onSave, saving }) {
             placeholder="919876543210"
           />
         </div>
-        <div className="mb-4">
-          <label className="form-label small fw-bold text-muted">UPI QR Code</label>
-          <div className="card bg-light border border-secondary border-dashed text-center p-4">
-            {settings.upiQrUrl ? (
-              <div className="position-relative d-inline-block">
-                <div className="bg-white p-2 border rounded shadow-sm mb-3">
-                  <img src={settings.upiQrUrl} alt="QR Code" className="img-fluid" style={{ maxHeight: '180px' }} />
-                </div>
-                <button
-                  className="btn btn-sm btn-danger position-absolute top-0 start-100 translate-middle rounded-circle shadow-sm"
-                  style={{ width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  onClick={() => setSettings(s => ({ ...s, upiQrUrl: '' }))}
-                >
-                  <i className="bi bi-x-lg"></i>
-                </button>
-                <div>
-                  <label htmlFor="qr-upload" className="btn btn-sm btn-outline-primary rounded-pill px-3">
-                    Change Image
-                  </label>
-                </div>
-              </div>
-            ) : (
-              <div className="py-2">
-                <i className="bi bi-qr-code fs-1 d-block mb-3 text-muted"></i>
-                <label htmlFor="qr-upload" className="btn btn-sm btn-primary rounded-pill px-4">
-                  Upload QR Image
-                </label>
-              </div>
-            )}
-            <input
-              id="qr-upload"
-              type="file"
-              className="d-none"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files[0];
-                if (file) {
-                  const reader = new FileReader();
-                  reader.onloadend = () => {
-                    setSettings(s => ({ ...s, upiQrUrl: reader.result }));
-                  };
-                  reader.readAsDataURL(file);
-                }
-              }}
-            />
-          </div>
+        <div className="mb-3">
+          <label className="form-label small fw-bold text-muted">UPI ID (e.g. name@upi)</label>
+          <input
+            className="form-control"
+            value={settings.upiId || ''}
+            onChange={(e) => setSettings(s => ({ ...s, upiId: e.target.value }))}
+            placeholder="example@okicici"
+          />
+          <small className="text-muted smallest">Required for auto-filled amount payments and dynamic QR.</small>
         </div>
         <div className="mb-4">
           <label className="form-label small fw-bold text-muted">Update Store Logo</label>
@@ -262,7 +227,7 @@ function SettingsPanel({ settings, setSettings, onSave, saving }) {
   );
 }
 
-function OrdersList({ orders, onWhatsApp, onDeleteOrder, onToggleDispatch }) {
+function OrdersList({ orders, onWhatsApp, onDeleteOrder, onToggleDispatch, onTogglePayment, onPreview }) {
   if (orders.length === 0) return <div className="text-center p-5 text-muted">No orders found.</div>;
   return (
     <div className="row g-3">
@@ -287,14 +252,30 @@ function OrdersList({ orders, onWhatsApp, onDeleteOrder, onToggleDispatch }) {
                     onClick={() => onToggleDispatch(o.id, o.dispatched)}
                     style={{ fontSize: '10px' }}
                   >
-                    {o.dispatched ? <><i className="bi bi-check2-circle"></i> DISPATCHED</> : <><i className="bi bi-clock"></i> PENDING</>}
+                    {o.dispatched ? <><i className="bi bi-truck"></i> DISPATCHED</> : <><i className="bi bi-clock"></i> PENDING</>}
                   </button>
-                  <span className={`badge ${o.paymentMethod === 'upi' ? 'bg-primary' : 'bg-success'} fw-bold d-flex align-items-center`}>
-                    {o.paymentMethod?.toUpperCase()}
-                  </span>
+                  <button
+                    className={`btn btn-sm py-1 px-2 rounded-pill fw-bold border ${o.isPaid ? 'btn-success' : 'btn-danger'}`}
+                    onClick={() => onTogglePayment(o.id, o.isPaid)}
+                    style={{ fontSize: '10px' }}
+                  >
+                    {o.isPaid ? <><i className="bi bi-cash-stack"></i> PAID</> : <><i className="bi bi-x-circle"></i> UNPAID</>}
+                  </button>
                 </div>
               </div>
               <div className="card-body d-flex flex-column" style={{ minHeight: '380px' }}>
+                {o.paymentScreenshot && (
+                  <div className="mb-3">
+                    <p className="fw-bold text-muted text-uppercase mb-2" style={{ fontSize: '10px', letterSpacing: '0.5px' }}>Payment Proof</p>
+                    <img
+                      src={o.paymentScreenshot}
+                      alt="Proof"
+                      className="img-thumbnail cursor-pointer shadow-sm"
+                      style={{ maxHeight: '100px', cursor: 'pointer' }}
+                      onClick={() => onPreview(o.paymentScreenshot)}
+                    />
+                  </div>
+                )}
                 <div className="mb-3">
                   <h5 className="fw-bold mb-1 text-dark">{o.customerName}</h5>
                   <a href={`tel:${o.phone}`} className="text-primary fw-bold small text-decoration-none d-block mb-2">
@@ -400,7 +381,7 @@ function ReportsPanel({ range, setRange, data, onDownload, productData, reportUr
                 <option value="yearly">Yearly</option>
               </select>
               <button className="btn btn-sm btn-outline-primary  p-3 fw-bold " onClick={onDownload}>PDF</button>
-              <a href="http://localhost:4000/api/reports/export?format=xlsx" target="_blank" className="btn btn-sm btn-success text-white p-3 fw-bold text-center">
+              <a href={`${API_BASE_URL}/reports/export?format=xlsx`} target="_blank" className="btn btn-sm btn-success text-white p-3 fw-bold text-center">
                 Excel
               </a>
             </div>
@@ -600,14 +581,19 @@ function CouponsPanel({ coupons, setCoupons, products }) {
 }
 
 function OwnerApp() {
-  const [tab, setTab] = useState('orders');
+  const [tab, setTab] = useState(() => localStorage.getItem('ownerTab') || 'orders');
+
+  // Save tab to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('ownerTab', tab);
+  }, [tab]);
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [coupons, setCoupons] = useState([]);
   const [form, setForm] = useState(emptyProduct);
   const [editingId, setEditingId] = useState(null);
   const [status, setStatus] = useStatus('');
-  const [settings, setSettings] = useState({ upiQrUrl: '', whatsappNumber: '', logoUrl: '', reportUrl: '' });
+  const [settings, setSettings] = useState({ upiQrUrl: '', upiId: '', whatsappNumber: '', logoUrl: '', reportUrl: '' });
   const [savingSettings, setSavingSettings] = useState(false);
   const [range, setRange] = useState('daily');
   const [report, setReport] = useState([]);
@@ -615,6 +601,7 @@ function OwnerApp() {
   const [orderFilterDate, setOrderFilterDate] = useState('');
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [previewImg, setPreviewImg] = useState(null);
 
   useEffect(() => { loadAll(); }, []);
   useEffect(() => { if (tab === 'reports') loadReport(range); }, [range, tab]);
@@ -643,6 +630,11 @@ function OwnerApp() {
   const filteredOrders = useMemo(() => {
     return orders
       .filter(o => {
+        // UPI orders only show if proof is uploaded OR marked as paid
+        if (o.paymentMethod === 'upi') {
+          if (!o.paymentScreenshot && !o.isPaid) return false;
+        }
+
         if (!orderFilterDate) return true;
         const oDate = new Date(o.createdAt).toDateString();
         const fDate = new Date(orderFilterDate).toDateString();
@@ -697,6 +689,16 @@ function OwnerApp() {
     }
   };
 
+  const onTogglePayment = async (id, currentStatus) => {
+    try {
+      await ownerTogglePayment(id, !currentStatus);
+      setOrders(await ownerFetchOrders());
+      setStatus('Payment status updated');
+    } catch {
+      setStatus('Error updating payment status');
+    }
+  };
+
   const onDeleteOrder = async (id) => {
     if (!window.confirm("Are you sure you want to delete this invoice?")) return;
     try {
@@ -739,14 +741,14 @@ function OwnerApp() {
   const onWhatsAppCustomer = (order) => {
     const phone = order.phone?.replace(/\D/g, '');
     const subtotal = order.items.reduce((acc, i) => acc + (i.lineTotal || 0), 0);
-    const deliveryFee = subtotal < 500 ? 50 : 0;
+    const deliveryFee = 0; // subtotal < 500 ? 50 : 0;
     const itemsList = order.items.map(i => `*${i.quantity} x ${i.product?.name || `Product ${i.productId}`}* = ₹${i.lineTotal || 0}`).join('\n');
 
     const greeting = `Hello ${order.customerName},\n\nThank you for your order from *Sparkle Gift Shop*! 🎁\n\n`;
     const orderDetails = `*Invoice No:* ${order.invoiceId}\n*Customer:* ${order.customerName}\n*Phone:* ${order.phone}\n*Address:* ${order.address || 'N/A'}\n\n`;
     const items = `*Order Items:*\n${itemsList}\n\n`;
-    const totals = `*Subtotal:* ₹${subtotal.toFixed(2)}\n*Delivery Fee:* ₹${deliveryFee.toFixed(2)}\n*Grand Total:* ₹${order.total?.toFixed(2)}\n*Payment Method:* ${order.paymentMethod?.toUpperCase()}\n\n`;
-    const footer = `We will deliver your order soon! 🚚\n\nFor any queries, feel free to contact us.\n\n*Sparkle Gift Shop*`;
+    const totals = `*Subtotal:* ₹${subtotal.toFixed(2)}\n*Delivery:* ₹${deliveryFee.toFixed(2)}\n*Total:* ₹${order.total?.toFixed(2)}\n*Payment:* ${order.paymentMethod?.toUpperCase()}\n*Status:* ${order.isPaid ? 'PAID ✅' : 'PENDING ⏳'}\n\n`;
+    const footer = `We will deliver your order soon! 🚚\n\n*Sparkle Gift Shop*`;
 
     const msg = greeting + orderDetails + items + totals + footer;
 
@@ -759,7 +761,7 @@ function OwnerApp() {
 
       <nav className="navbar navbar-expand-lg bg-white shadow-sm border-bottom px-3 px-md-5 sticky-top" style={{ zIndex: 1030 }}>
         <div className="container-fluid p-0">
-          <div className="d-flex align-items-center gap-2">
+          <div className="d-flex align-items-center gap-2 text-decoration-none" style={{ cursor: 'pointer' }} onClick={() => setTab('orders')}>
             <img src={logo} alt="Logo" className="rounded-circle" style={{ width: 62, height: 62, objectFit: 'cover' }} />
             <div>
               <h1 className="h4 fw-bold mb-0 text-dark">Sparkle Gift Shop</h1>
@@ -893,6 +895,8 @@ function OwnerApp() {
                 onWhatsApp={onWhatsAppCustomer}
                 onDeleteOrder={onDeleteOrder}
                 onToggleDispatch={onToggleDispatch}
+                onTogglePayment={onTogglePayment}
+                onPreview={setPreviewImg}
               />
             </>
           )}
@@ -902,6 +906,36 @@ function OwnerApp() {
           {tab === 'settings' && <SettingsPanel settings={settings} setSettings={setSettings} onSave={onSaveSettings} saving={savingSettings} />}
         </div>
       </main>
+
+      {/* Image Preview Modal */}
+      {previewImg && (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-2 p-md-4"
+          style={{ zIndex: 2000, background: 'rgba(0,0,0,0.9)' }}
+          onClick={() => setPreviewImg(null)}
+        >
+          <div className="position-relative" onClick={e => e.stopPropagation()}>
+            <button
+              className="btn btn-light btn-sm position-absolute top-0 end-0 m-2 rounded-circle shadow"
+              onClick={() => setPreviewImg(null)}
+              style={{ width: '36px', height: '36px', zIndex: 10 }}
+            >
+              <i className="bi bi-x-lg"></i>
+            </button>
+            <img
+              src={previewImg}
+              alt="Preview"
+              className="rounded shadow-lg"
+              style={{
+                maxWidth: '95vw',
+                maxHeight: '90vh',
+                objectFit: 'contain',
+                display: 'block'
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

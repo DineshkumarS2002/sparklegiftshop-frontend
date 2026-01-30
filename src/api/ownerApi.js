@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://sparklegiftshop-backend.onrender.com/api';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://sparklegiftshop-backend.onrender.com/api',
+  baseURL: API_BASE_URL,
 });
 
 export const ownerFetchProducts = () => api.get('/products').then((r) => r.data);
@@ -13,6 +15,7 @@ export const ownerFetchOrders = () => api.get('/orders').then((r) => r.data);
 export const ownerGetOrder = (idOrInvoiceId) => api.get(`/orders/${idOrInvoiceId}`).then((r) => r.data);
 export const ownerDeleteOrder = (id) => api.delete(`/orders/${id}`);
 export const ownerToggleDispatch = (id, dispatched) => api.patch(`/orders/${id}/dispatch`, { dispatched }).then(r => r.data);
+export const ownerTogglePayment = (id, isPaid) => api.patch(`/orders/${id}/payment`, { isPaid }).then(r => r.data);
 
 export const ownerFetchReportPdf = (range) =>
   api.get('/reports/export', { params: { range, format: 'pdf' }, responseType: 'blob' }).then((r) => r.data);
