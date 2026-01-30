@@ -96,10 +96,10 @@ export default function ClientOrder() {
           <i className={`bi ${(order.isPaid || order.paymentScreenshot) ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill'} fs-1`}></i>
         </div>
         <h1 className="fw-extrabold text-dark h2">
-          {(order.isPaid || order.paymentScreenshot) ? 'Order Confirmed!' : 'Order Pending...'}
+          {(order.isPaid || order.paymentScreenshot || order.paymentMethod === 'cod') ? 'Order Confirmed!' : 'Waiting for Payment...'}
         </h1>
         <p className="text-muted lead">
-          {(order.isPaid || order.paymentScreenshot)
+          {(order.isPaid || order.paymentScreenshot || order.paymentMethod === 'cod')
             ? 'Thank you for shopping with Sparkle Gift Shop'
             : 'Please complete your payment to confirm the order'}
         </p>
@@ -135,8 +135,8 @@ export default function ClientOrder() {
                   <span className="h5 fw-bold mb-0 text-dark">Grand Total</span>
                   <div className="text-end">
                     <span className="h4 fw-extrabold mb-0 text-primary d-block">₹{order.total?.toFixed(2)}</span>
-                    <span className={`smallest fw-bold p-1 rounded ${(order.isPaid || order.paymentScreenshot) ? 'bg-success text-white' : 'bg-warning text-dark'}`}>
-                      {(order.isPaid || order.paymentScreenshot) ? 'PAID' : 'PAYMENT PENDING'}
+                    <span className={`smallest fw-bold p-1 rounded ${(order.isPaid || order.paymentScreenshot || order.paymentMethod === 'cod') ? 'bg-success text-white' : 'bg-warning text-dark'}`}>
+                      {order.paymentMethod === 'cod' ? 'COD - CONFIRMED' : (order.isPaid || order.paymentScreenshot) ? 'PAID' : 'WAITING FOR PAYMENT'}
                     </span>
                   </div>
                 </div>
@@ -242,24 +242,49 @@ export default function ClientOrder() {
               </div>
             </div>
           </div>
+        ) : order.paymentMethod === 'cod' ? (
+          <div className="col-12 col-lg-5 order-1 order-lg-2">
+            <div className="card border-0 shadow-lg text-center h-100 overflow-hidden" style={{ borderRadius: '20px' }}>
+              <div className="bg-success py-4 text-white">
+                <i className="bi bi-check-circle-fill fs-1 mb-2"></i>
+                <h4 className="mb-0 fw-extrabold">Order Confirmed</h4>
+              </div>
+              <div className="card-body p-4 d-flex flex-column justify-content-center align-items-center">
+                <div className="mb-4">
+                  <p className="text-muted mb-2">Your order has been placed successfully via</p>
+                  <div className="h5 fw-bold text-primary">Cash on Delivery</div>
+                </div>
+                <div className="alert alert-success border-0 small mb-4">
+                  <i className="bi bi-truck me-2"></i>
+                  Our team will contact you soon to confirm the delivery details.
+                </div>
+                <button
+                  className="btn btn-primary w-100 py-3 rounded-pill fw-bold"
+                  onClick={() => redirectToWhatsApp(order)}
+                >
+                  <i className="bi bi-whatsapp me-2"></i> Message on WhatsApp
+                </button>
+              </div>
+            </div>
+          </div>
         ) : order.paymentMethod === 'upi' && (
           <div className="col-12 col-lg-5 order-1 order-lg-2">
             <div className="card border-0 shadow-sm p-4 text-center">
               <i className="bi bi-exclamation-triangle-fill text-warning fs-1 mb-3"></i>
               <h5 className="fw-bold">Payment Info Missing</h5>
-              <p className="text-muted small">Please contact the shop owner on WhatsApp to complete your payment.</p>
-              <a href={`https://wa.me/916381830479?text=Order%20${order.invoiceId}%20payment%20details`} className="btn btn-success rounded-pill fw-bold">
+              <p className="text-muted small">The shop's UPI information is currently missing. Please contact the owner on WhatsApp to complete your payment.</p>
+              <a href={`https://wa.me/${(settings.whatsappNumber || '916381830479').replace(/\D/g, '')}?text=Hi, I want to pay for my Order ${order.invoiceId}. Please send payment details.`} className="btn btn-success rounded-pill fw-bold" target="_blank">
                 <i className="bi bi-whatsapp me-2"></i>Message Owner
               </a>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
 
 
       <div className="text-center mt-5">
         <p className="text-muted small">
-          Need help? WhatsApp us at <strong>+91 6381830479</strong>
+          Need help? WhatsApp us at <strong>+{settings.whatsappNumber || '91 6381830479'}</strong>
         </p>
       </div>
     </div>

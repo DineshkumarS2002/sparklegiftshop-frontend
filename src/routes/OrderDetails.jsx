@@ -55,8 +55,8 @@ export default function OrderDetails() {
                     <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom">
                         <div>
                             <span className="text-muted small text-uppercase d-block">Status</span>
-                            <span className={`badge rounded-pill px-3 py-2 mt-1 ${order.dispatched ? 'bg-success' : 'bg-warning text-dark'}`}>
-                                {order.dispatched ? 'DISPATCHED' : 'PENDING'}
+                            <span className={`badge rounded-pill px-3 py-2 mt-1 ${order.dispatched ? 'bg-success' : (order.paymentMethod === 'cod' || order.isPaid || order.paymentScreenshot) ? 'bg-primary' : 'bg-warning text-dark'}`}>
+                                {order.dispatched ? 'DISPATCHED' : (order.paymentMethod === 'cod' || order.isPaid || order.paymentScreenshot) ? 'CONFIRMED' : 'WAITING FOR PAYMENT'}
                             </span>
                         </div>
                         <div className="text-end">
