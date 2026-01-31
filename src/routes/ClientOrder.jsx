@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { QRCodeSVG } from 'qrcode.react';
 import { clientFetchSettings, clientGetOrder, API_BASE_URL, clientUploadScreenshot } from '../api/clientApi';
 
 export default function ClientOrder() {
@@ -87,129 +88,123 @@ export default function ClientOrder() {
   const dynamicQrUrl = upiLink
     ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiLink)}&ecc=M&margin=1`
     : '';
+  const hasUpi = settings?.upiId;
+  const isPaid = order.isPaid || order.paymentScreenshot;
+
+  // Show UPI UI if it's a UPI order OR if it's an unpaid COD order (as an option to pay now)
+  const showUpiSection = hasUpi && !isPaid;
 
   return (
     <div className="container-fluid px-3 px-md-5 py-4 py-md-5">
-      {/* ... (Existing Header) */}
       <div className="text-center mb-5">
-        <div className={`d-inline-flex align-items-center justify-content-center ${(order.isPaid || order.paymentScreenshot) ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-warning'} rounded-circle mb-3`} style={{ width: '80px', height: '80px' }}>
-          <i className={`bi ${(order.isPaid || order.paymentScreenshot) ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill'} fs-1`}></i>
+        <div className={`d-inline-flex align-items-center justify-content-center ${(order.isPaid || order.paymentScreenshot || order.paymentMethod === 'cod') ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-warning'} rounded-circle mb-3`} style={{ width: '80px', height: '80px' }}>
+          <i className={`bi ${(order.isPaid || order.paymentScreenshot || order.paymentMethod === 'cod') ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill'} fs-1`}></i>
         </div>
+
         <h1 className="fw-extrabold text-dark h2">
           {(order.isPaid || order.paymentScreenshot || order.paymentMethod === 'cod') ? 'Order Confirmed!' : 'Waiting for Payment...'}
         </h1>
-        <p className="text-muted lead">
-          {(order.isPaid || order.paymentScreenshot || order.paymentMethod === 'cod')
-            ? 'Thank you for shopping with Sparkle Gift Shop'
-            : 'Please complete your payment to confirm the order'}
-        </p>
-        <div className="d-inline-block bg-white shadow-sm border rounded-pill px-4 py-2 fw-bold text-primary mt-2">
+        <p className="text-muted small">Thank you for shopping with Sparkle Gift Shop</p>
+        <div className="d-inline-block border px-4 py-2 rounded-pill bg-white shadow-sm fw-bold text-primary mt-2">
           Invoice No: {order.invoiceId}
         </div>
       </div>
 
-      <div className="row g-4 justify-content-center align-items-start">
-        {/* Left Column (Items summary) - no changes here, just for context */}
-        <div className="col-12 col-lg-7 order-2 order-lg-1">
-          {/* ... existing card content ... */}
-          <div className="card shadow-sm border-0 overflow-hidden mb-4">
-            {/* [Existing content of Invoice Summary card, omitted for brevity but should be preserved] */}
-            <div className="card-header bg-white py-3 border-bottom">
-              <h5 className="mb-0 fw-bold"><i className="bi bi-receipt me-2 text-primary"></i>Invoice Summary</h5>
+      <div className="row g-4 justify-content-center">
+        <div className="col-12 col-lg-7">
+          {/* Order Details Card */}
+          <div className="card border-0 shadow-lg overflow-hidden h-100" style={{ borderRadius: '20px' }}>
+            <div className="card-header bg-success text-white py-3 border-0 text-center">
+              <i className="bi bi-check-circle-fill me-2"></i>
+              <span className="fw-bold text-uppercase tracking-wider">Order Confirmed</span>
             </div>
-            <div className="card-body p-3 p-md-4">
-              {/* ... (Existing table rows) ... */}
-              <div className="order-items-list">
-                {order.items.map((item) => (
-                  <div key={item.productId} className="row align-items-center border-bottom border-light py-3 gx-2">
-                    <div className="col-7">
-                      <div className="fw-bold text-dark mb-1">{item.product?.name}</div>
+            <div className="card-body p-4">
+              <h5 className="fw-bold mb-4 border-bottom pb-2">Order Summary</h5>
+              <div className="mb-4">
+                {order.items?.map((item, idx) => (
+                  <div key={idx} className="d-flex justify-content-between align-items-center mb-2">
+                    <div className="d-flex align-items-center gap-3">
+                      <div className="bg-light rounded p-1" style={{ width: '40px', height: '40px' }}>
+                        <img src={item.product?.image || 'https://via.placeholder.com/40'} className="w-100 h-100 object-fit-cover rounded" alt="" />
+                      </div>
+                      <div>
+                        <div className="fw-bold small">{item.product?.name || `Product ${item.productId}`}</div>
+                        <div className="text-muted smallest">Qty: {item.quantity} x ₹{item.product?.price}</div>
+                      </div>
                     </div>
-                    <div className="col-2 text-center">{item.quantity}</div>
-                    <div className="col-3 text-end">₹{item.lineTotal?.toFixed(2)}</div>
+                    <div className="fw-bold small">₹{item.lineTotal}</div>
                   </div>
                 ))}
               </div>
-              <div className="p-4 bg-light border-top">
-                <div className="d-flex justify-content-between align-items-center">
-                  <span className="h5 fw-bold mb-0 text-dark">Grand Total</span>
-                  <div className="text-end">
-                    <span className="h4 fw-extrabold mb-0 text-primary d-block">₹{order.total?.toFixed(2)}</span>
-                    <span className={`smallest fw-bold p-1 rounded ${(order.isPaid || order.paymentScreenshot || order.paymentMethod === 'cod') ? 'bg-success text-white' : 'bg-warning text-dark'}`}>
-                      {order.paymentMethod === 'cod' ? 'COD - CONFIRMED' : (order.isPaid || order.paymentScreenshot) ? 'PAID' : 'WAITING FOR PAYMENT'}
-                    </span>
+
+              <div className="bg-light p-3 rounded-3 mb-4">
+                <div className="d-flex justify-content-between mb-1">
+                  <span className="text-muted small">Subtotal</span>
+                  <span className="small fw-bold">₹{order.subtotal}</span>
+                </div>
+                {order.discount > 0 && (
+                  <div className="d-flex justify-content-between mb-1 text-success">
+                    <span className="small">Discount</span>
+                    <span className="small fw-bold">-₹{order.discount}</span>
+                  </div>
+                )}
+                <div className="d-flex justify-content-between mb-2">
+                  <span className="text-muted small">Delivery</span>
+                  <span className="small fw-bold text-success">FREE</span>
+                </div>
+                <div className="d-flex justify-content-between pt-2 border-top">
+                  <span className="fw-bold">Total Paid</span>
+                  <span className="fw-bold text-primary h5 mb-0">₹{order.total}</span>
+                </div>
+              </div>
+
+              <div className="row g-3">
+                <div className="col-sm-6">
+                  <label className="text-muted smallest fw-bold text-uppercase d-block mb-1">Customer Details</label>
+                  <div className="small fw-bold">{order.customerName}</div>
+                  <div className="small text-muted">{order.phone}</div>
+                </div>
+                <div className="col-sm-6 text-sm-end">
+                  <label className="text-muted smallest fw-bold text-uppercase d-block mb-1">Payment Method</label>
+                  <div className="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-10 rounded-pill px-3">
+                    {order.paymentMethod?.toUpperCase()}
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className="card shadow-sm border-0 mb-4 bg-white border-start border-primary border-5">
-            <div className="card-body p-4">
-              <div className="row g-4">
-                <div className="col-sm-6">
-                  <h6 className="fw-bold text-uppercase smallest text-muted mb-2">Delivery Address</h6>
-                  <p className="fw-bold mb-1 fs-5 text-dark">{order.customerName}</p>
-                  <p className="mb-0 text-muted small">{order.address || 'No address provided'}</p>
-                </div>
-                <div className="col-sm-6">
-                  <h6 className="fw-bold text-uppercase smallest text-muted mb-2">Contact Details</h6>
-                  <p className="fw-bold mb-1 text-primary"><i className="bi bi-telephone-fill me-2"></i>{order.phone}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="d-flex flex-column flex-sm-row gap-3">
-            <Link to="/" className="btn btn-light shadow-sm flex-grow-1 py-3 fw-bold rounded-pill border">
-              <i className="bi bi-shop me-2"></i>Continue Shopping
-            </Link>
-            <a href={`${API_BASE_URL}/orders/${order.invoiceId}/pdf`} download className="btn btn-primary shadow flex-grow-1 py-3 fw-bold rounded-pill">
-              <i className="bi bi-cloud-arrow-down-fill me-2"></i>Download Link
-            </a>
           </div>
         </div>
 
-        {/* Right Column: Payment (Now Dynamic) */}
-        {isUpi ? (
+        {showUpiSection ? (
           <div className="col-12 col-lg-5 order-1 order-lg-2">
-            <div className="card border-0 shadow-lg text-center h-100 overflow-hidden" style={{ minHeight: '380px', borderRadius: '20px' }}>
-              <div className="bg-primary py-4 text-white">
-                <h4 className="mb-1 fw-extrabold">Complete Payment</h4>
-                <p className="mb-0 opacity-75 small">Pay securely via UPI</p>
+            <div className="card border-0 shadow-lg text-center h-100 overflow-hidden" style={{ borderRadius: '20px' }}>
+              <div className="card-header bg-primary text-white py-3 border-0">
+                <span className="fw-bold text-uppercase tracking-wider">
+                  {order.paymentMethod === 'cod' ? 'Pay Now via UPI (Optional)' : 'Complete Payment'}
+                </span>
               </div>
-              <div className="card-body p-4 d-flex flex-column justify-content-center align-items-center">
-                <div className="mb-3">
-                  <p className="mb-1 text-muted fw-bold text-uppercase smallest">Pay Exactly</p>
-                  <div className="h1 fw-extrabold text-primary mb-0">₹{order.total?.toFixed(2)}</div>
-                </div>
-
-                <div className="bg-white p-3 rounded-4 shadow border mb-3" style={{ width: '240px' }}>
-                  <img src={dynamicQrUrl} alt="Payment QR" className="w-100 rounded-3" />
-                  <div className="mt-3 small fw-bold text-primary text-break">
-                    <i className="bi bi-wallet2 me-1"></i> {settings.upiId}
-                  </div>
-                </div>
-
-                {/* Direct Pay Button for Mobile Users */}
-                {upiLink && (
-                  <div className="w-100 mb-3 d-md-none">
-                    <a href={upiLink} className="btn btn-success btn-lg w-100 rounded-pill fw-bold py-3 shadow">
-                      <i className="bi bi-phone-vibrate me-2"></i> OPEN UPI APPS
-                    </a>
+              <div className="card-body p-4 d-flex flex-column align-items-center">
+                {order.paymentMethod === 'cod' && (
+                  <div className="alert alert-info smallest text-start mb-3 py-2 px-3 border-0 bg-info bg-opacity-10 text-info">
+                    <i className="bi bi-lightning-fill me-2"></i>
+                    Switch to UPI for faster processing and contact-less delivery!
                   </div>
                 )}
-
-                <div className="d-flex gap-2 mb-3">
-                  <div className="px-2 py-1 bg-light border rounded small fw-bold">GPay</div>
-                  <div className="px-2 py-1 bg-light border rounded small fw-bold">PhonePe</div>
-                  <div className="px-2 py-1 bg-light border rounded small fw-bold">Paytm</div>
+                <p className="text-muted small mb-4">Scan the QR code below or use the UPI ID to pay <strong>₹{order.total}</strong></p>
+                <div className="bg-white p-3 border rounded-4 shadow-sm mb-4" style={{ width: '220px', height: '220px' }}>
+                  {settings.upiId ? (
+                    <QRCodeSVG
+                      value={`upi://pay?pa=${settings.upiId}&pn=Sparkle%20Gift%20Shop&am=${order.total}&cu=INR`}
+                      size={180}
+                      level="H"
+                      includeMargin={false}
+                    />
+                  ) : (
+                    <div className="h-100 d-flex align-items-center justify-content-center text-muted small">QR Code Unavailable</div>
+                  )}
                 </div>
 
-                <div className="alert alert-info py-2 px-3 small border-0 w-100 mb-3">
-                  <i className="bi bi-info-circle-fill me-2"></i>
-                  {upiLink ? 'Amount & Invoice auto-filled!' : 'Scan QR and pay exactly the total amount'}
-                </div>
+                <h5 className="fw-bold text-primary mb-3 user-select-all">{settings.upiId}</h5>
 
                 <div className="w-100 border-top pt-3">
                   {uploadSuccess || order.paymentScreenshot ? (
@@ -220,18 +215,9 @@ export default function ClientOrder() {
                   ) : (
                     <>
                       <label className="form-label small fw-bold text-muted text-uppercase mb-2">Upload Payment Screenshot</label>
-                      <input
-                        type="file"
-                        className="form-control form-control-sm mb-2"
-                        accept="image/*"
-                        onChange={handleScreenshotChange}
-                      />
+                      <input type="file" className="form-control form-control-sm mb-2" accept="image/*" onChange={handleScreenshotChange} />
                       {screenshot && (
-                        <button
-                          className="btn btn-primary d-flex align-items-center justify-content-center w-100 py-2 rounded-pill fw-bold"
-                          onClick={uploadProof}
-                          disabled={uploading}
-                        >
+                        <button className="btn btn-primary d-flex align-items-center justify-content-center w-100 py-2 rounded-pill fw-bold" onClick={uploadProof} disabled={uploading}>
                           {uploading ? <span className="spinner-border spinner-border-sm me-2"></span> : <i className="bi bi-upload me-2"></i>}
                           Confirm & Submit Proof
                         </button>
@@ -242,52 +228,49 @@ export default function ClientOrder() {
               </div>
             </div>
           </div>
+        ) : isPaid ? (
+          <div className="col-12 col-lg-5 order-1 order-lg-2">
+            <div className="card border-0 shadow-lg text-center h-100 overflow-hidden" style={{ borderRadius: '20px' }}>
+              <div className="card-body p-5 d-flex flex-column align-items-center justify-content-center">
+                <div className="bg-success bg-opacity-10 text-success rounded-circle p-4 mb-4">
+                  <i className="bi bi-shield-check fs-1"></i>
+                </div>
+                <h4 className="fw-bold">Payment Verified!</h4>
+                <p className="text-muted small mb-0">We have received your payment proof. Our team will verify and dispatch your order soon.</p>
+              </div>
+            </div>
+          </div>
         ) : order.paymentMethod === 'cod' ? (
           <div className="col-12 col-lg-5 order-1 order-lg-2">
             <div className="card border-0 shadow-lg text-center h-100 overflow-hidden" style={{ borderRadius: '20px' }}>
-              <div className="bg-success py-4 text-white">
-                <i className="bi bi-check-circle-fill fs-1 mb-2"></i>
-                <h4 className="mb-0 fw-extrabold">Order Confirmed</h4>
-              </div>
-              <div className="card-body p-4 d-flex flex-column justify-content-center align-items-center">
-                <div className="mb-4">
-                  <p className="text-muted mb-2">Your order has been placed successfully via</p>
-                  <div className="h5 fw-bold text-primary">Cash on Delivery</div>
+              <div className="card-body p-5 d-flex flex-column align-items-center justify-content-center">
+                <div className="bg-info bg-opacity-10 text-info rounded-circle p-4 mb-4">
+                  <i className="bi bi-truck fs-1"></i>
                 </div>
-                <div className="alert alert-success border-0 small mb-4">
-                  <i className="bi bi-truck me-2"></i>
-                  Our team will contact you soon to confirm the delivery details.
+                <h4 className="fw-bold text-dark text-capitalize">Cash on Delivery</h4>
+                <p className="text-muted small mb-4">Your order will be processed and you can pay the amount to our delivery executive.</p>
+                <div className="alert alert-success smallest py-2 px-3 m-0 rounded-pill">
+                  <i className="bi bi-record-circle-fill me-2"></i>
+                  Delivery team will contact you soon
                 </div>
-                <button
-                  className="btn btn-primary w-100 py-3 rounded-pill fw-bold"
-                  onClick={() => redirectToWhatsApp(order)}
-                >
-                  <i className="bi bi-whatsapp me-2"></i> Message on WhatsApp
-                </button>
               </div>
-            </div>
-          </div>
-        ) : order.paymentMethod === 'upi' && (
-          <div className="col-12 col-lg-5 order-1 order-lg-2">
-            <div className="card border-0 shadow-sm p-4 text-center">
-              <i className="bi bi-exclamation-triangle-fill text-warning fs-1 mb-3"></i>
-              <h5 className="fw-bold">Payment Info Missing</h5>
-              <p className="text-muted small">The shop's UPI information is currently missing. Please contact the owner on WhatsApp to complete your payment.</p>
-              <a href={`https://wa.me/${(settings.whatsappNumber || '916381830479').replace(/\D/g, '')}?text=Hi, I want to pay for my Order ${order.invoiceId}. Please send payment details.`} className="btn btn-success rounded-pill fw-bold" target="_blank">
-                <i className="bi bi-whatsapp me-2"></i>Message Owner
-              </a>
             </div>
           </div>
         ) : null}
+
       </div>
 
 
-      <div className="text-center mt-5">
-        <p className="text-muted small">
+      <div className="text-center mt-5 mb-5">
+        <Link to="/" className="btn btn-primary btn-lg rounded-pill px-5 fw-bold shadow-sm transition-all hover-grow">
+          <i className="bi bi-bag-plus-fill me-2"></i> Continue Shopping
+        </Link>
+        <p className="text-muted small mt-4">
           Need help? WhatsApp us at <strong>+{settings.whatsappNumber || '91 6381830479'}</strong>
         </p>
       </div>
-    </div>
+
+    </div >
   );
 }
 

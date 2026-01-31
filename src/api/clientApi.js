@@ -8,10 +8,10 @@ const api = axios.create({
 
 export const clientFetchProducts = () => api.get('/products').then((r) => r.data);
 export const clientFetchCart = () => api.get('/cart').then((r) => r.data);
-export const clientAddToCart = (productId) =>
-  api.post('/cart/add', { productId, quantity: 1 }).then((r) => r.data);
-export const clientUpdateCartItem = (productId, quantity) =>
-  api.put(`/cart/item/${productId}`, { quantity }).then((r) => r.data);
+export const clientAddToCart = (productId, variant = null) =>
+  api.post('/cart/add', { productId, quantity: 1, variant }).then((r) => r.data);
+export const clientUpdateCartItem = (productId, quantity, variantSize = null) =>
+  api.put(`/cart/item/${productId}`, { quantity, variantSize }).then((r) => r.data);
 export const clientClearCart = () => api.post('/cart/clear').then((r) => r.data);
 
 export const clientCreateOrder = (payload) => api.post('/orders', payload).then((r) => r.data);
@@ -28,3 +28,5 @@ export const clientVerifyCoupon = (code) => api.post('/verify-coupon', { code })
 
 export const clientUploadScreenshot = (invoiceId, screenshot) =>
   api.put(`/orders/${invoiceId}/screenshot`, { screenshot }).then((r) => r.data);
+
+export const clientFetchCoupons = () => api.get('/coupons').then((r) => r.data);
