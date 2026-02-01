@@ -27,7 +27,7 @@ export default function WhatsAppWidget({ phone }) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 textDecoration: 'none',
-                zIndex: 10000,
+                zIndex: 3000,
                 transition: 'transform 0.3s ease'
             }}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}

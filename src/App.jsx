@@ -59,7 +59,7 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {!isOwnerPage && (
+      {location.pathname === '/' && (
         <WhatsAppWidget phone={settings.whatsappNumber || '916381830479'} />
       )}
     </>
