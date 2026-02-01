@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { clientGetOrder, API_BASE_URL } from '../api/clientApi';
+import { clientGetOrder, API_BASE_URL, getSocketURL } from '../api/clientApi';
+import { io } from 'socket.io-client';
 
 export default function OrderDetails() {
     const { invoiceId } = useParams();
@@ -9,16 +10,30 @@ export default function OrderDetails() {
     const [error, setError] = useState('');
 
     useEffect(() => {
+        let socket;
         (async () => {
             try {
                 const data = await clientGetOrder(invoiceId);
                 setOrder(data);
+
+                // Initialize Socket
+                socket = io(getSocketURL());
+                socket.emit('join_order', data.id);
+
+                socket.on('tracking_update', (updatedOrder) => {
+                    setOrder(updatedOrder);
+                });
+
             } catch (err) {
                 setError('Order not found');
             } finally {
                 setLoading(false);
             }
         })();
+
+        return () => {
+            if (socket) socket.disconnect();
+        };
     }, [invoiceId]);
 
     if (loading) {
@@ -90,7 +105,7 @@ export default function OrderDetails() {
                         ))}
                     </div>
 
-                    <div className="bg-light p-3 rounded">
+                    <div className="bg-light p-3 rounded mb-4">
                         <div className="d-flex justify-content-between mb-2">
                             <span className="text-muted">Subtotal</span>
                             <span className="fw-medium">₹{order.subtotal?.toFixed(2)}</span>
@@ -108,6 +123,59 @@ export default function OrderDetails() {
                         <div className="d-flex justify-content-between pt-2 border-top">
                             <span className="fw-bold fs-5">Total</span>
                             <span className="fw-bold fs-5 text-primary">₹{order.total?.toFixed(2)}</span>
+                        </div>
+                    </div>
+
+                    {/* Live Tracking Timeline */}
+                    <div className="border-top pt-4">
+                        <h6 className="text-uppercase text-muted small fw-bold mb-4">Live Tracking Updates</h6>
+                        <div className="tracking-timeline">
+                            {order.trackingId && (
+                                <div className="mb-4 p-3 bg-primary bg-opacity-10 rounded border border-primary border-opacity-10">
+                                    <div className="d-flex align-items-center">
+                                        <i className="bi bi-box-seam fs-4 me-3 text-primary"></i>
+                                        <div>
+                                            <div className="fw-bold text-primary">{order.courierPartner || 'Shipping Partner Assigned'}</div>
+                                            <div className="small text-muted">Tracking ID: <strong>{order.trackingId}</strong></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="ms-3 border-start ps-4 position-relative">
+                                {/* Current Status Based on Schema */}
+                                {order.trackingEvents && order.trackingEvents.length > 0 ? (
+                                    order.trackingEvents.map((event, idx) => (
+                                        <div key={idx} className="mb-4 position-relative">
+                                            <div className="position-absolute translate-middle-x" style={{ left: '-25px', top: '0' }}>
+                                                <div className="rounded-circle bg-primary" style={{ width: '12px', height: '12px' }}></div>
+                                            </div>
+                                            <div className="fw-bold small">{event.message}</div>
+                                            {event.location && <div className="smallest text-muted"><i className="bi bi-geo-alt me-1"></i>{event.location}</div>}
+                                            <div className="smallest text-muted opacity-75">{new Date(event.updatedAt).toLocaleString()}</div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="mb-4 position-relative">
+                                        <div className="position-absolute translate-middle-x" style={{ left: '-25px', top: '0' }}>
+                                            <div className="rounded-circle bg-secondary" style={{ width: '12px', height: '12px' }}></div>
+                                        </div>
+                                        <div className="fw-bold small">Order Placed</div>
+                                        <div className="smallest text-muted">We have received your order.</div>
+                                        <div className="smallest text-muted opacity-75">{new Date(order.createdAt).toLocaleString()}</div>
+                                    </div>
+                                )}
+
+                                {order.dispatched && !order.trackingEvents?.length && (
+                                    <div className="mb-4 position-relative">
+                                        <div className="position-absolute translate-middle-x" style={{ left: '-25px', top: '0' }}>
+                                            <div className="rounded-circle bg-success" style={{ width: '12px', height: '12px' }}></div>
+                                        </div>
+                                        <div className="fw-bold small">Order Dispatched</div>
+                                        <div className="smallest text-muted">Package has been handed over to courier.</div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

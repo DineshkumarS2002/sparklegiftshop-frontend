@@ -17,8 +17,94 @@ import {
   ownerDeleteOrder,
   ownerToggleDispatch,
   ownerTogglePayment,
+  ownerUpdateOrderTracking,
   API_BASE_URL
 } from '../api/ownerApi';
+
+function TrackingModal({ order, onClose, onUpdate }) {
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    courierPartner: order.courierPartner || '',
+    trackingId: order.trackingId || '',
+    message: '',
+    location: ''
+  });
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const updated = await ownerUpdateOrderTracking(order.id, form);
+      onUpdate(updated);
+      onClose();
+    } catch (err) {
+      alert('Failed to update tracking');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal show d-block shadow" style={{ backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 2000 }}>
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content border-0 shadow-lg" style={{ borderRadius: '1.25rem' }}>
+          <div className="modal-header border-0 pt-4 px-4 pb-0">
+            <h5 className="fw-extrabold mb-0">Update Tracking - {order.invoiceId}</h5>
+            <button type="button" className="btn-close" onClick={onClose}></button>
+          </div>
+          <form onSubmit={onSubmit}>
+            <div className="modal-body px-4 pt-4">
+              <div className="mb-3">
+                <label className="small fw-bold text-muted text-uppercase mb-1">Courier Partner</label>
+                <input
+                  className="form-control shadow-none"
+                  placeholder="e.g. Professional Courier"
+                  value={form.courierPartner}
+                  onChange={e => setForm({ ...form, courierPartner: e.target.value })}
+                />
+              </div>
+              <div className="mb-3">
+                <label className="small fw-bold text-muted text-uppercase mb-1">Tracking ID</label>
+                <input
+                  className="form-control shadow-none"
+                  placeholder="e.g. PC123456789"
+                  value={form.trackingId}
+                  onChange={e => setForm({ ...form, trackingId: e.target.value })}
+                />
+              </div>
+              <hr className="my-4 opacity-10" />
+              <h6 className="small fw-extrabold text-primary text-uppercase mb-3">Add Location/Message Update</h6>
+              <div className="mb-3">
+                <label className="small fw-bold text-muted text-uppercase mb-1">Status Message</label>
+                <input
+                  className="form-control shadow-none"
+                  placeholder="e.g. Package arrived at hub"
+                  value={form.message}
+                  onChange={e => setForm({ ...form, message: e.target.value })}
+                />
+              </div>
+              <div className="mb-3">
+                <label className="small fw-bold text-muted text-uppercase mb-1">Location</label>
+                <input
+                  className="form-control shadow-none"
+                  placeholder="e.g. Chennai, TN"
+                  value={form.location}
+                  onChange={e => setForm({ ...form, location: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="modal-footer border-0 pb-4 px-4 pt-0">
+              <button type="button" className="btn btn-light rounded-pill px-4 fw-bold" onClick={onClose}>Cancel</button>
+              <button type="submit" className="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" disabled={loading}>
+                {loading ? 'Updating...' : 'Save Tracking'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
 import { Link } from 'react-router-dom';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import {
@@ -439,7 +525,7 @@ function SettingsPanel({ settings, setSettings, onSave, saving }) {
   );
 }
 
-function OrdersList({ orders, onWhatsApp, onDeleteOrder, onToggleDispatch, onTogglePayment, onPreview }) {
+function OrdersList({ orders, onWhatsApp, onDeleteOrder, onToggleDispatch, onTogglePayment, onPreview, onTracking }) {
   if (orders.length === 0) return <div className="text-center p-5 text-muted">No orders found.</div>;
   return (
     <div className="row g-3">
@@ -479,6 +565,13 @@ function OrdersList({ orders, onWhatsApp, onDeleteOrder, onToggleDispatch, onTog
                   >
                     {o.paymentMethod === 'cod' ? <><i className="bi bi-cash me-1"></i> COD</> : <><i className="bi bi-qr-code-scan me-1"></i> UPI</>}
                   </span>
+                  <button
+                    className="btn btn-sm py-1 px-2 rounded-pill fw-bold border btn-info text-white"
+                    onClick={() => onTracking(o)}
+                    style={{ fontSize: '10px' }}
+                  >
+                    <i className="bi bi-geo-alt-fill me-1"></i> TRACKING
+                  </button>
                 </div>
 
               </div>
@@ -990,6 +1083,7 @@ function OwnerApp() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [previewImg, setPreviewImg] = useState(null);
+  const [trackingOrder, setTrackingOrder] = useState(null);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -1364,8 +1458,20 @@ function OwnerApp() {
                 onToggleDispatch={onToggleDispatch}
                 onTogglePayment={onTogglePayment}
                 onPreview={setPreviewImg}
+                onTracking={setTrackingOrder}
               />
             </>
+          )}
+
+          {trackingOrder && (
+            <TrackingModal
+              order={trackingOrder}
+              onClose={() => setTrackingOrder(null)}
+              onUpdate={(updated) => {
+                setOrders(prev => prev.map(o => o.id === updated.id ? updated : o));
+                setStatus('Tracking updated successfully');
+              }}
+            />
           )}
 
           {tab === 'coupons' && <CouponsPanel coupons={coupons} setCoupons={setCoupons} products={products} />}

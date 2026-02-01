@@ -11,6 +11,10 @@ const getBaseURL = () => {
 
 export const API_BASE_URL = getBaseURL();
 
+export const getSocketURL = () => {
+  return API_BASE_URL.replace('/api', '');
+};
+
 const api = axios.create({
   baseURL: API_BASE_URL,
 });

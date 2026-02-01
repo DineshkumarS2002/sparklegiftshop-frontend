@@ -25,6 +25,7 @@ export const ownerGetOrder = (idOrInvoiceId) => api.get(`/orders/${idOrInvoiceId
 export const ownerDeleteOrder = (id) => api.delete(`/orders/${id}`);
 export const ownerToggleDispatch = (id, dispatched) => api.patch(`/orders/${id}/dispatch`, { dispatched }).then(r => r.data);
 export const ownerTogglePayment = (id, isPaid) => api.patch(`/orders/${id}/payment`, { isPaid }).then(r => r.data);
+export const ownerUpdateOrderTracking = (id, payload) => api.patch(`/orders/${id}/tracking`, payload).then(r => r.data);
 
 export const ownerFetchReportPdf = (range) =>
   api.get('/reports/export', { params: { range, format: 'pdf' }, responseType: 'blob' }).then((r) => r.data);
