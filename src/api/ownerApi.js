@@ -1,6 +1,15 @@
 import axios from 'axios';
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://sparklegiftshop-backend.onrender.com/api';
+const getBaseURL = () => {
+  // Use Render URL if on production Netlify domain
+  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return 'https://sparklegiftshop-backend.onrender.com/api';
+  }
+  // Otherwise use environment variable (usually localhost:4000/api)
+  return import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+};
+
+export const API_BASE_URL = getBaseURL();
 
 const api = axios.create({
   baseURL: API_BASE_URL,

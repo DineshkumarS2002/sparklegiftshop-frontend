@@ -1,7 +1,22 @@
 import axios from 'axios';
 
+const getBaseURL = () => {
+  // If explicitly set in environment, use that
+  if (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('localhost')) {
+    return import.meta.env.VITE_API_URL;
+  }
+
+  // If running on local machine, use localhost (unless environment variable overrides it)
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+  }
+
+  // Fallback to production Render URL
+  return 'https://sparklegiftshop-backend.onrender.com/api';
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://sparklegiftshop-backend.onrender.com/api',
+  baseURL: getBaseURL(),
 });
 
 export const fetchProducts = () => api.get('/products').then((res) => res.data);
