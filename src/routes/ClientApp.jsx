@@ -257,6 +257,11 @@ export default function ClientApp() {
   }, []);
 
   const load = async () => {
+    // Check if we have cached settings to show something quickly
+    const cachedSettings = localStorage.getItem('sparkle_settings');
+    if (cachedSettings) setSettings(JSON.parse(cachedSettings));
+
+    setLoading(true);
     try {
       const responses = await Promise.allSettled([
         clientFetchProducts(),
@@ -267,21 +272,20 @@ export default function ClientApp() {
 
       const [p, c, s, cp] = responses.map((res, index) => {
         if (res.status === 'fulfilled') return res.value;
-        console.error(`API ${index} failed:`, res.reason);
-        // Default values for failures
-        if (index === 0) return []; // products
-        if (index === 1) return { items: [], total: 0 }; // cart
-        if (index === 2) return {}; // settings
-        if (index === 3) return []; // coupons
-        return null;
+        return (index === 0 ? [] : (index === 1 ? { items: [], total: 0 } : (index === 2 ? {} : [])));
       });
 
       setProducts(p || []);
       setCart(c || { items: [], total: 0 });
-      setSettings(s || {});
+      if (s) {
+        setSettings(s);
+        localStorage.setItem('sparkle_settings', JSON.stringify(s));
+      }
       setCoupons(cp || []);
     } catch (err) {
       console.error("Load failed completely", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -324,23 +328,69 @@ export default function ClientApp() {
   }, [products, query, category]);
 
   const onAdd = async (id, variant = null) => {
+    // Optimistic Update: Calculate the new cart state locally
+    const product = products.find(p => p.id === id);
+    if (product) {
+      setCart(prev => {
+        const newItems = [...prev.items];
+        const variantSize = variant ? variant.size : null;
+        const variantPrice = variant ? variant.price : product.price;
+        const existingIdx = newItems.findIndex(i => i.productId === id && i.variantSize === variantSize);
+
+        if (existingIdx > -1) {
+          const item = { ...newItems[existingIdx] };
+          item.quantity += 1;
+          item.lineTotal = +(item.quantity * variantPrice).toFixed(2);
+          newItems[existingIdx] = item;
+        } else {
+          newItems.push({
+            productId: id,
+            product,
+            quantity: 1,
+            variantSize,
+            variantPrice,
+            lineTotal: variantPrice
+          });
+        }
+        const subtotal = +newItems.reduce((sum, i) => sum + i.lineTotal, 0).toFixed(2);
+        return { items: newItems, subtotal, total: subtotal };
+      });
+    }
+
     try {
       const next = await clientAddToCart(id, variant);
-      setCart(next);
-      if (variant) {
-        setStatus(`Added: ${variant.size}`);
-      } else {
-        setStatus('Added to cart');
-      }
+      setCart(next); // Re-sync with actual server data
+      setStatus(variant ? `Added: ${variant.size}` : 'Added to cart');
     } catch {
       setStatus('Could not add to cart');
+      // Re-fetch to fix local state if failed
+      const c = await clientFetchCart();
+      setCart(c);
     }
   };
 
 
   const onQty = async (productId, qty, variantSize) => {
-    const next = await clientUpdateCartItem(productId, qty, variantSize);
-    setCart(next);
+    // Optimistic Update
+    setCart(prev => {
+      const newItems = prev.items.map(item => {
+        if (item.productId === productId && item.variantSize === variantSize) {
+          const newQty = Math.max(0, qty);
+          return { ...item, quantity: newQty, lineTotal: +(newQty * (item.variantPrice || item.product?.price || 0)).toFixed(2) };
+        }
+        return item;
+      }).filter(item => item.quantity > 0);
+      const subtotal = +newItems.reduce((sum, i) => sum + i.lineTotal, 0).toFixed(2);
+      return { items: newItems, subtotal, total: subtotal };
+    });
+
+    try {
+      const next = await clientUpdateCartItem(productId, qty, variantSize);
+      setCart(next);
+    } catch {
+      const c = await clientFetchCart();
+      setCart(c);
+    }
   };
 
   const onClear = async () => {

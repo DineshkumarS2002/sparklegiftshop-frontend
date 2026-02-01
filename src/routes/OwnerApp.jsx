@@ -1007,12 +1007,24 @@ function OwnerApp() {
   useEffect(() => { if (tab === 'reports') loadReport(range); }, [range, tab]);
 
   const loadAll = async () => {
+    // Quick load from cache for better UX
+    const cached = localStorage.getItem('sparkle_owner_settings');
+    if (cached) setSettings(JSON.parse(cached));
+
     setLoading(true);
     try {
-      const [p, o, s, c] = await Promise.all([ownerFetchProducts(), ownerFetchOrders(), ownerFetchSettings(), ownerFetchCoupons()]);
+      const [p, o, s, c] = await Promise.all([
+        ownerFetchProducts(),
+        ownerFetchOrders(),
+        ownerFetchSettings(),
+        ownerFetchCoupons()
+      ]);
       setProducts(p);
       setOrders(o);
-      setSettings(s);
+      if (s) {
+        setSettings(s);
+        localStorage.setItem('sparkle_owner_settings', JSON.stringify(s));
+      }
       setCoupons(c);
     } catch (err) {
       console.error(err);
@@ -1091,20 +1103,31 @@ function OwnerApp() {
   };
 
   const onToggleDispatch = async (id, currentStatus) => {
+    // Optimistic Update: Update local state immediately
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, dispatched: !currentStatus } : o));
+
     try {
       await ownerToggleDispatch(id, !currentStatus);
-      setOrders(await ownerFetchOrders());
+      // No need to fetch all orders again, local state is already correct
+      setStatus(`Order ${!currentStatus ? 'marked as Dispatched' : 'moved to Pending'}`);
     } catch {
+      // Rollback on error
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, dispatched: currentStatus } : o));
       setStatus('Error updating dispatch status');
     }
   };
 
   const onTogglePayment = async (id, currentStatus) => {
+    // Optimistic Update: Update local state immediately
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, isPaid: !currentStatus } : o));
+
     try {
       await ownerTogglePayment(id, !currentStatus);
-      setOrders(await ownerFetchOrders());
-      setStatus('Payment status updated');
+      // No need to fetch all orders again
+      setStatus(`Order marked as ${!currentStatus ? 'Paid' : 'Unpaid'}`);
     } catch {
+      // Rollback on error
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, isPaid: currentStatus } : o));
       setStatus('Error updating payment status');
     }
   };
