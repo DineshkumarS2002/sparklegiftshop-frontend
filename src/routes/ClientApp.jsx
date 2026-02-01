@@ -165,21 +165,6 @@ function TrustBadges() {
   );
 }
 
-function WhatsAppWidget({ phone }) {
-  if (!phone) return null;
-  const target = phone.replace(/\D/g, '');
-  const cleanPhone = target.length === 10 ? '91' + target : target;
-  return (
-    <a
-      href={`https://wa.me/${cleanPhone}?text=Hi Sparkle Gift Shop, I have a query about your products!`}
-      className="whatsapp-float shadow-lg"
-      target="_blank"
-      rel="noreferrer"
-    >
-      <i className="bi bi-whatsapp"></i>
-    </a>
-  );
-}
 
 function OffersCarousel({ coupons }) {
   const [timeLeft, setTimeLeft] = useState({ hrs: '02', mins: '45', secs: '10' });
@@ -289,25 +274,6 @@ export default function ClientApp() {
     }
   };
 
-  // Update Favicon dynamically
-  useEffect(() => {
-    if (settings.logoUrl) {
-      let link = document.querySelector("link[rel~='icon']");
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'icon';
-        document.getElementsByTagName('head')[0].appendChild(link);
-      }
-      link.href = settings.logoUrl;
-    }
-  }, [settings.logoUrl]);
-
-  // Update Document Title
-  useEffect(() => {
-    if (settings.storeName) {
-      document.title = `${settings.storeName} | Personalized Gifts`;
-    }
-  }, [settings.storeName]);
 
   const categories = useMemo(() => {
     const set = new Set(products.map((p) => p.category).filter(Boolean));
@@ -525,8 +491,6 @@ export default function ClientApp() {
         🚚 FREE Delivery on all orders above ₹999!
       </div>
 
-      {/* Floating WhatsApp Widget */}
-      {!showCart && <WhatsAppWidget phone={settings.whatsappNumber || '916381830479'} />}
 
 
       {/* Toast Notification */}
