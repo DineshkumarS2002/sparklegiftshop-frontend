@@ -36,16 +36,6 @@ function ProductCard({ product, onAdd }) {
   const [adding, setAdding] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState(null);
 
-  // If variants exist, default to the first one? No, force selection? 
-  // Let's default to null to make user choose, OR default to first for easy clicking.
-  // Better to default to null if we want them to actively confusing, but for "Select Button" request
-  // let's show buttons.
-
-  // Actually, if variants exist, show the price range or "Starts from".
-  // But simplistic approach: Default to base product if no variant selected? 
-  // Or if variants exist, hide base product add button until variant selected?
-  // Let's go with: Buttons are displayed. 
-
   const hasVariants = product.variants && product.variants.length > 0;
 
   // Current display price
@@ -58,9 +48,7 @@ function ProductCard({ product, onAdd }) {
   const handleAdd = async (e) => {
     e.stopPropagation();
     if (hasVariants && !selectedVariant) {
-      // If variants exist but none selected, maybe shake the variant container or alert?
-      // Let's Select the first one automatically or just alert?
-      // "select option vachu kudu" -> give select option.
+
       alert('Please select an option');
       return;
     }
@@ -71,57 +59,108 @@ function ProductCard({ product, onAdd }) {
   };
 
   return (
-    <div className="card h-100 product-card border-0 shadow-sm bg-white" style={{ borderRadius: '16px' }}>
-      <div className="position-relative overflow-hidden" style={{ aspectRatio: '1/1', borderRadius: '16px 16px 0 0' }}>
+    <div className="card h-100 border-0 shadow-sm bg-white overflow-hidden" style={{ borderRadius: '20px', transition: 'none' }}>
+      {/* Pro Square Image Header */}
+      <div className="position-relative overflow-hidden" style={{
+        aspectRatio: '1/1',
+        borderRadius: '20px 20px 0 0'
+      }}>
         <img
           src={displayImage}
           alt={product.name}
-          className="product-image w-100 h-100 object-fit-cover transition-all"
+          className="w-100 h-100 object-fit-cover"
         />
-        {product.price > 500 && (
-          <span className="position-absolute top-0 start-0 m-2 badge bg-danger rounded-pill px-2 py-1 smallest fw-bold shadow-sm">Hot Seller</span>
-        )}
+        <button type="button" className="btn btn-light rounded-circle position-absolute top-0 end-0 m-3 shadow-sm border-0 d-flex align-items-center justify-content-center" style={{ width: '32px', height: '32px', opacity: 0.9 }}>
+          <i className="bi bi-heart text-muted"></i>
+        </button>
       </div>
-      <div className="card-body p-3 d-flex flex-column">
-        <div className="text-primary fw-bold mb-1" style={{ fontSize: '0.65rem', letterSpacing: '1px', textTransform: 'uppercase' }}>{product.category}</div>
-        <h6 className="card-title fw-bold mb-2 text-dark text-truncate" style={{ fontSize: '0.9rem', lineHeight: '1.4' }}>{product.name}</h6>
 
-        {/* Dynamic Variant Selector: Buttons */}
+      <div className="card-body p-3 d-flex flex-column">
+        <h5 className="fw-bold text-dark mb-1 text-truncate" style={{ fontSize: '18px' }}>{product.name}</h5>
+
+        {/* Short Description */}
+        <p className="smallest text-muted mb-2 opacity-75 line-clamp-2" style={{ fontSize: '11px', minHeight: '32px' }}>
+          {product.description || 'Premium quality handcrafted product designed for your special moments.'}
+        </p>
+
+        {/* Premium Variant Selector: Choice Pills */}
         {hasVariants && (
           <div className="mb-3">
-            <label className="d-block w-100 text-muted smallest mb-1">Select Size</label>
-            <div className="d-flex flex-wrap gap-1">
+            <div className="smallest fw-bold text-muted text-uppercase mb-2" style={{ fontSize: '9px', letterSpacing: '0.5px' }}>Select Choice</div>
+            <div className="d-flex flex-wrap gap-2 align-items-center">
               {product.variants.map((v, i) => (
-                <button
+                <div
                   key={i}
-                  className={`btn btn-sm flex-grow-1 py-1 px-2 border rounded-1 ${selectedVariant === v ? 'btn-primary' : 'btn-outline-secondary text-dark border-secondary-subtle'}`}
-                  style={{ fontSize: '10px' }}
+                  className="cursor-pointer"
                   onClick={(e) => { e.stopPropagation(); setSelectedVariant(v); }}
+                  style={{ cursor: 'pointer' }}
                 >
-                  {v.size}
-                </button>
+                  {v.color ? (
+                    <div
+                      className="rounded-circle shadow-sm"
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        backgroundColor: v.color,
+                        border: selectedVariant === v ? '2px solid #6d28d9' : '1px solid rgba(0,0,0,0.15)',
+                        outline: selectedVariant === v ? '2px solid #6d28d9' : 'none',
+                        outlineOffset: '2px',
+                        padding: '1px'
+                      }}
+                    ></div>
+                  ) : (
+                    <div
+                      className={`px-3 py-1 rounded-pill fw-bold border ${selectedVariant === v ? 'text-white' : 'text-dark'}`}
+                      style={{
+                        fontSize: '11px',
+                        backgroundColor: selectedVariant === v ? '#6d28d9' : '#fff',
+                        borderColor: selectedVariant === v ? '#6d28d9' : '#dee2e6'
+                      }}
+                    >
+                      {v.size}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>
         )}
 
-        <div className="d-flex justify-content-between align-items-center mt-auto">
-          <div>
-            <span className="fw-extrabold text-dark h5 mb-0">₹{displayPrice}</span>
-            {displayOriginalPrice && (
-              <div className="d-flex align-items-center gap-1">
-                <span className="smallest text-muted text-decoration-line-through">₹{displayOriginalPrice}</span>
-                <span className="text-success smallest fw-bold">{Math.round(((displayOriginalPrice - displayPrice) / displayOriginalPrice) * 100)}% OFF</span>
-              </div>
-            )}
+        {/* Footer: Price & Add to Cart Button */}
+        <div className="d-flex align-items-center justify-content-between mt-auto pt-2 border-top gap-2">
+          <div className="d-flex flex-column">
+            <span className="smallest text-muted fw-bold text-uppercase opacity-50" style={{ fontSize: '8px', letterSpacing: '0.5px' }}>Price</span>
+            <div className="d-flex align-items-center gap-1">
+              <span className="fw-extrabold text-dark mb-0" style={{ fontSize: '18px', letterSpacing: '-0.5px' }}>₹{displayPrice}</span>
+              {displayOriginalPrice && (
+                <span className="smallest text-muted text-decoration-line-through opacity-50" style={{ fontSize: '11px' }}>₹{displayOriginalPrice}</span>
+              )}
+            </div>
           </div>
+
           <button
-            className={`btn ${adding ? 'btn-success' : 'btn-primary'} rounded-circle d-flex align-items-center justify-content-center shadow-sm p-0`}
-            style={{ width: '36px', height: '36px', transition: 'all 0.3s' }}
+            type="button"
+            className="btn fw-bold transition-none d-flex align-items-center justify-content-center border-0 shadow-sm"
+            style={{
+              height: '40px',
+              minWidth: '40px',
+              fontSize: '13px',
+              backgroundColor: adding ? '#10b981' : '#6d28d9',
+              color: '#fff',
+              borderRadius: '12px',
+              padding: '0 12px'
+            }}
             onClick={handleAdd}
             disabled={adding}
           >
-            {adding ? <i className="bi bi-check-lg fs-5"></i> : <i className="bi bi-cart-plus fs-5"></i>}
+            {adding ? (
+              <i className="bi bi-check-lg" style={{ fontSize: '20px' }}></i>
+            ) : (
+              <>
+                <i className="bi bi-cart-plus-fill" style={{ fontSize: '18px' }}></i>
+                <span className="d-none d-md-inline ms-2">Add to Bag</span>
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -134,31 +173,31 @@ function TrustBadges() {
   return (
     <div className="row g-3 mb-5">
       <div className="col-6 col-md-3">
-        <div className="trust-card shadow-sm">
-          <i className="bi bi-truck trust-icon"></i>
-          <div className="fw-bold small">Fast Delivery</div>
-          <div className="text-muted smallest">Across Tamilnadu</div>
+        <div className="trust-card shadow-sm py-4">
+          <i className="bi bi-truck trust-icon fs-2"></i>
+          <div className="fw-extrabold text-dark mt-2" style={{ fontSize: '1.1rem' }}>Fast Delivery</div>
+          <div className="text-muted fw-bold small">Across Tamilnadu</div>
         </div>
       </div>
       <div className="col-6 col-md-3">
-        <div className="trust-card shadow-sm">
-          <i className="bi bi-patch-check trust-icon"></i>
-          <div className="fw-bold small">Premium Quality</div>
-          <div className="text-muted smallest">Handpicked Items</div>
+        <div className="trust-card shadow-sm py-4">
+          <i className="bi bi-patch-check trust-icon fs-2"></i>
+          <div className="fw-extrabold text-dark mt-2" style={{ fontSize: '1.1rem' }}>Premium Quality</div>
+          <div className="text-muted fw-bold small">Handpicked Items</div>
         </div>
       </div>
       <div className="col-6 col-md-3">
-        <div className="trust-card shadow-sm">
-          <i className="bi bi-shield-lock trust-icon"></i>
-          <div className="fw-bold small">Secure Payment</div>
-          <div className="text-muted smallest">UPI & COD</div>
+        <div className="trust-card shadow-sm py-4">
+          <i className="bi bi-shield-lock trust-icon fs-2"></i>
+          <div className="fw-extrabold text-dark mt-2" style={{ fontSize: '1.1rem' }}>Secure Payment</div>
+          <div className="text-muted fw-bold small">UPI & COD</div>
         </div>
       </div>
       <div className="col-6 col-md-3">
-        <div className="trust-card shadow-sm">
-          <i className="bi bi-chat-heart trust-icon"></i>
-          <div className="fw-bold small">Best Support</div>
-          <div className="text-muted smallest">WhatsApp Ready</div>
+        <div className="trust-card shadow-sm py-4">
+          <i className="bi bi-chat-heart trust-icon fs-2"></i>
+          <div className="fw-extrabold text-dark mt-2" style={{ fontSize: '1.1rem' }}>Best Support</div>
+          <div className="text-muted fw-bold small">WhatsApp Ready</div>
         </div>
       </div>
     </div>
@@ -188,7 +227,7 @@ function OffersCarousel({ coupons }) {
   const label = universalCoupon ? (universalCoupon.type === 'percent' ? `Flat ${universalCoupon.value}% OFF!` : `Flat ₹${universalCoupon.value} OFF!`) : 'Flat 20% OFF!';
 
   return (
-    <div className="card border-0 mt-3 mb-5 text-white overflow-hidden shadow-lg hover-shadow" style={{
+    <div className="card border-0 mt-3 mb-5 text-white overflow-hidden shadow-lg" style={{
       borderRadius: '24px',
       background: 'linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.65)), url("https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=1200&q=80")',
       backgroundSize: 'cover',
@@ -212,9 +251,9 @@ function OffersCarousel({ coupons }) {
           </div>
           <h2 className="fw-extrabold mb-3 display-5">✨ {label} ✨</h2>
           <p className="lead mb-4 opacity-90 mx-auto fw-medium" style={{ maxWidth: '600px' }}>Add magic to your gifts. Flash sale ends soon! Use this code:</p>
-          <div className="d-inline-flex align-items-center bg-white bg-opacity-20 rounded-pill p-1 ps-3 border border-white border-opacity-30 backdrop-blur">
-            <span className="fw-extrabold me-3 text-white tracking-widest h5 mb-0">{code}</span>
-            <button className="btn btn-primary rounded-pill px-4 fw-extrabold shadow-sm" onClick={() => { navigator.clipboard.writeText(code); alert(`Code ${code} Copied!`); }}>COPY CODE</button>
+          <div className="d-inline-flex align-items-center bg-white rounded-pill p-1 ps-3 ps-md-4 border border-white shadow-sm">
+            <span className="fw-extrabold me-3 me-md-4 text-dark tracking-widest mb-0" style={{ fontSize: 'clamp(16px, 5vw, 24px)' }}>{code}</span>
+            <button className="btn btn-primary rounded-pill px-3 px-md-5 py-2 py-md-3 fw-extrabold shadow-lg" style={{ fontSize: 'clamp(12px, 3.5vw, 16px)' }} onClick={() => { navigator.clipboard.writeText(code); alert(`Code ${code} Copied!`); }}>COPY CODE</button>
           </div>
         </div>
       </div>
@@ -234,6 +273,8 @@ export default function ClientApp() {
   const [category, setCategory] = useState('All');
   const [step, setStep] = useState('shop'); // shop | checkout
   const [orderForm, setOrderForm] = useState(emptyOrderForm);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchFocus, setSearchFocus] = useState(false);
 
   const navigate = useNavigate();
 
@@ -248,12 +289,15 @@ export default function ClientApp() {
 
     setLoading(true);
     try {
-      const responses = await Promise.allSettled([
+      const hasToken = !!localStorage.getItem('sparkle_token');
+      const promises = [
         clientFetchProducts(),
-        clientFetchCart(),
+        hasToken ? clientFetchCart() : Promise.resolve({ items: [], total: 0 }),
         clientFetchSettings(),
         clientFetchCoupons()
-      ]);
+      ];
+
+      const responses = await Promise.allSettled(promises);
 
       const [p, c, s, cp] = responses.map((res, index) => {
         if (res.status === 'fulfilled') return res.value;
@@ -267,6 +311,14 @@ export default function ClientApp() {
         localStorage.setItem('sparkle_settings', JSON.stringify(s));
       }
       setCoupons(cp || []);
+
+      // Check for pending add-to-cart from before login
+      const pendingAdd = localStorage.getItem('sparkle_pending_add');
+      if (pendingAdd) {
+        const { id, variant } = JSON.parse(pendingAdd);
+        localStorage.removeItem('sparkle_pending_add');
+        await onAdd(id, variant);
+      }
     } catch (err) {
       console.error("Load failed completely", err);
     } finally {
@@ -294,6 +346,11 @@ export default function ClientApp() {
   }, [products, query, category]);
 
   const onAdd = async (id, variant = null) => {
+    if (!localStorage.getItem('sparkle_token')) {
+      localStorage.setItem('sparkle_pending_add', JSON.stringify({ id, variant }));
+      navigate('/login');
+      return;
+    }
     // Optimistic Update: Calculate the new cart state locally
     const product = products.find(p => p.id === id);
     if (product) {
@@ -336,11 +393,11 @@ export default function ClientApp() {
   };
 
 
-  const onQty = async (productId, qty, variantSize) => {
+  const onQty = async (productId, qty, variantSize, variantColor) => {
     // Optimistic Update
     setCart(prev => {
       const newItems = prev.items.map(item => {
-        if (item.productId === productId && item.variantSize === variantSize) {
+        if (item.productId === productId && item.variantSize === variantSize && item.variantColor === variantColor) {
           const newQty = Math.max(0, qty);
           return { ...item, quantity: newQty, lineTotal: +(newQty * (item.variantPrice || item.product?.price || 0)).toFixed(2) };
         }
@@ -351,7 +408,7 @@ export default function ClientApp() {
     });
 
     try {
-      const next = await clientUpdateCartItem(productId, qty, variantSize);
+      const next = await clientUpdateCartItem(productId, qty, variantSize, variantColor);
       setCart(next);
     } catch {
       const c = await clientFetchCart();
@@ -415,6 +472,10 @@ export default function ClientApp() {
   const finalTotal = Math.max(0, (cart.total - discount) + deliveryFee);
 
   const onCheckout = () => {
+    if (!localStorage.getItem('sparkle_token')) {
+      navigate('/login');
+      return;
+    }
     if (!cart.items.length) {
       setStatus('Cart is empty');
       return;
@@ -486,54 +547,154 @@ export default function ClientApp() {
 
   return (
     <div className="container-fluid p-0 pb-3">
-      {/* Announcement Bar */}
-      <div className="announcement-bar shadow-sm">
-        🚚 FREE Delivery on all orders above ₹999!
+      {/* Fixed Header Wrapper */}
+      <div className="fixed-top shadow-sm" style={{ zIndex: 3050 }}>
+        {/* Announcement Bar */}
+        <div className="announcement-bar shadow-sm" style={{
+          position: 'relative',
+          padding: '3px 12px',
+          fontSize: 'clamp(10px, 3vw, 14px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          🚚 FREE Delivery on all orders above ₹999!
+        </div>
+
+        {/* Header & Cart Toggle */}
+        <header className="navbar navbar-expand-lg border-bottom px-2 px-sm-4 px-md-5" style={{
+          height: 'auto',
+          minHeight: 'clamp(60px, 12vh, 120px)',
+          padding: '8px 0',
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
+        }}>
+          <div className="container-fluid d-flex justify-content-between align-items-center px-0 flex-nowrap">
+            <Link to="/" className="d-flex align-items-center text-decoration-none" onClick={() => { setStep('shop'); setPaymentStep(false); }}>
+              <img src={settings.logoUrl || logo} alt="Logo" className="rounded-circle me-1 me-md-3 border border-1 border-white header-logo" style={{ width: 'clamp(40px, 10vw, 80px)', height: 'clamp(40px, 10vw, 80px)', objectFit: 'cover', flexShrink: 0 }} />
+              <div className="header-title-container" style={{ minWidth: 0, flexShrink: 1 }}>
+                <h1 className="fw-extrabold mb-0 text-dark header-title" style={{
+                  fontSize: 'clamp(1rem, 5.5vw, 2.5rem)',
+                  letterSpacing: '-1px',
+                  lineHeight: '1.1',
+                  textShadow: '2px 2px 0px rgba(0,0,0,0.05)',
+                  wordBreak: 'keep-all'
+                }}>{settings.storeName || 'Sparkle Gift Shop'}</h1>
+                <p className="text-primary mb-0 fw-bold opacity-75 text-uppercase d-none d-sm-block" style={{ letterSpacing: '3px', fontSize: '10px', marginTop: '4px' }}>Premium Gifts</p>
+              </div>
+            </Link>
+
+            <div className="d-flex align-items-center gap-1 gap-md-2 flex-shrink-0 ms-2">
+              <button
+                className="btn btn-primary position-relative rounded-pill px-3 px-sm-4 py-2 d-flex align-items-center gap-2 shadow-sm"
+                onClick={() => setShowCart(true)}
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: 'none',
+                  fontSize: '14px'
+                }}
+              >
+                <i className="bi bi-bag-heart fs-6"></i>
+                <span className="fw-bold d-none d-sm-inline">Cart</span>
+                {cart.items.length > 0 && (
+                  <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '9px', padding: '3px 6px' }}>
+                    {cart.items.length}
+                  </span>
+                )}
+              </button>
+
+              <div className="position-relative">
+                <button
+                  className={`btn btn-sm rounded-pill px-3 py-2 fw-bold d-flex align-items-center gap-2 border-2 dropdown-toggle ${menuOpen ? 'btn-primary' : 'btn-outline-primary'}`}
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+                  style={{ fontSize: '12px', zIndex: 3060, position: 'relative' }}
+                >
+                  <i className={`bi ${menuOpen ? 'bi-x-lg' : 'bi-list'} fs-6`}></i>
+                  <span className="d-none d-sm-inline">{menuOpen ? 'Close' : 'More'}</span>
+                </button>
+
+                {menuOpen && (
+                  <>
+                    <div
+                      className="position-fixed top-0 start-0 w-100 h-100"
+                      style={{ zIndex: 3055, background: 'transparent' }}
+                      onClick={() => setMenuOpen(false)}
+                    ></div>
+                    <ul className="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 show" style={{
+                      borderRadius: '16px',
+                      minWidth: '220px',
+                      overflow: 'hidden',
+                      position: 'absolute',
+                      right: 0,
+                      zIndex: 3060,
+                      animation: 'slideDown 0.3s ease'
+                    }}>
+                      <li>
+                        <Link
+                          to="/track"
+                          className="dropdown-item py-3 px-4 d-flex align-items-center gap-3"
+                          style={{ fontSize: '14px' }}
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          <i className="bi bi-geo-alt-fill text-primary fs-5"></i>
+                          <span className="fw-semibold">Track Order</span>
+                        </Link>
+                      </li>
+                      <li><hr className="dropdown-divider my-0" /></li>
+                      {!localStorage.getItem('sparkle_token') ? (
+                        <li>
+                          <Link
+                            to="/login"
+                            className="dropdown-item py-3 px-4 d-flex align-items-center gap-3"
+                            style={{ fontSize: '14px' }}
+                            onClick={() => setMenuOpen(false)}
+                          >
+                            <i className="bi bi-person-check-fill text-primary fs-5"></i>
+                            <span className="fw-semibold">Sign In</span>
+                          </Link>
+                        </li>
+                      ) : (
+                        <li>
+                          <button
+                            className="dropdown-item py-3 px-4 d-flex align-items-center gap-3 w-100 text-start"
+                            style={{ fontSize: '14px' }}
+                            onClick={() => {
+                              setMenuOpen(false);
+                              localStorage.removeItem('sparkle_token');
+                              localStorage.removeItem('sparkle_user');
+                              localStorage.removeItem('sparkle_pending_add');
+                              window.location.reload();
+                            }}
+                          >
+                            <i className="bi bi-box-arrow-right text-danger fs-5"></i>
+                            <span className="fw-semibold text-danger">Logout</span>
+                          </button>
+                        </li>
+                      )}
+                    </ul>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </header>
       </div>
-
-
 
       {/* Toast Notification */}
       {status && (
-        <div className="alert alert-success status-toast shadow-lg border-0 rounded-pill px-4">
+        <div className="alert alert-success status-toast shadow-lg border-0 rounded-pill px-4" style={{ top: '80px' }}>
           <i className="bi bi-check-circle-fill me-2"></i> {status}
         </div>
       )}
 
-      {/* Header & Cart Toggle */}
-      <header className="navbar navbar-expand-lg bg-white shadow-sm border-bottom fixed-top px-3 px-sm-4 px-md-6 px-lg-8 py-3" style={{ zIndex: 3050, top: '28px', height: '75px' }}>
-        <div className="container-fluid p-0 d-flex justify-content-between align-items-center h-100">
-          <Link to="/" className="d-flex align-items-center text-decoration-none" onClick={() => { setStep('shop'); setPaymentStep(false); }}>
-            <img src={settings.logoUrl || logo} alt="Logo" className="rounded-circle me-2 me-lg-3 shadow-sm header-logo border" style={{ width: 62, height: 62, objectFit: 'cover' }} />
-            <div className="header-title-container">
-              <h1 className="h4 fw-bold mb-0 text-dark header-title">{settings.storeName || 'Sparkle Gift Shop'}</h1>
-              <p className="text-muted mb-0 d-none d-sm-block smallest fw-bold  opacity-75">Personalized Gifts for Every Occasion</p>
-            </div>
-          </Link>
 
-          <div className="d-flex align-items-center gap-2">
-            <Link to="/track" className="btn btn-sm btn-light border rounded-pill px-3 fw-bold text-primary d-flex align-items-center">
-              <i className="bi bi-geo-alt"></i> <span className="d-none d-md-inline ms-1 small">Track Order</span>
-            </Link>
-
-            <button className="btn btn-primary position-relative rounded-pill px-3 py-1 d-flex align-items-center shadow-sm" onClick={() => setShowCart(true)}>
-              <i className="bi bi-bag-heart fs-6 me-2"></i>
-              <span className="small fw-bold">Cart</span>
-              {cart.items.length > 0 && (
-                <span className="ms-2 badge rounded-pill bg-white text-primary" style={{ fontSize: '10px' }}>
-                  {cart.items.length}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      </header>
-
-
-      <div className="container-fluid px-3 px-md-5 py-4 mt-5 pt-5">
+      <div className="container-fluid p-0 py-4" style={{ marginTop: 'clamp(90px, 18vh, 150px)' }}>
 
         {/* Cart Offcanvas (Sidebar) */}
-        <div className={`offcanvas offcanvas-end ${showCart ? 'show' : ''}`} tabIndex="-1" style={{ visibility: showCart ? 'visible' : 'hidden', zIndex: 4000, borderLeft: 'none', boxShadow: '-10px 0 30px rgba(0,0,0,0.1)', transition: 'none' }}>
+        <div className={`offcanvas offcanvas-end ${showCart ? 'show' : ''}`} tabIndex="-1" style={{ visibility: showCart ? 'visible' : 'hidden', zIndex: 4000, boxShadow: '-10px 0 30px rgba(0,0,0,0.1)' }}>
           <div className="offcanvas-header bg-white border-bottom py-3">
             <h5 className="offcanvas-title fw-bold text-dark mb-0"><i className="bi bi-bag-heart me-2 text-primary"></i>Your Shopping Bag</h5>
             <button type="button" className="btn-close shadow-none" onClick={() => setShowCart(false)} aria-label="Close"></button>
@@ -554,12 +715,14 @@ export default function ClientApp() {
                   {cart.items.map((item) => (
                     <div className="card border-0 shadow-sm mb-3 overflow-hidden p-2" key={item.productId}>
                       <div className="d-flex align-items-center">
-                        <img
-                          src={item.product?.image || 'https://via.placeholder.com/60'}
-                          alt={item.product?.name}
-                          className="rounded me-3 border"
-                          style={{ width: 60, height: 60, objectFit: 'cover' }}
-                        />
+                        <div className="position-relative bg-light rounded me-3 border" style={{ width: 60, height: 60, aspectRatio: '1/1', overflow: 'hidden' }}>
+                          <img
+                            src={item.product?.image || 'https://via.placeholder.com/60'}
+                            alt={item.product?.name}
+                            className="w-100 h-100 object-fit-contain"
+                            style={{ backgroundColor: '#f8f9fa' }}
+                          />
+                        </div>
                         <div className="flex-grow-1 min-w-0">
                           <div className="fw-bold small text-truncate">
                             {item.product?.name} {item.variantSize && <span className="text-muted">({item.variantSize})</span>}
@@ -567,9 +730,9 @@ export default function ClientApp() {
                           <div className="text-muted smallest fw-medium">Unit Price: ₹{item.variantPrice || item.product?.price}</div>
                           <div className="d-flex align-items-center gap-2 mt-1">
                             <div className="input-group input-group-sm" style={{ width: '80px' }}>
-                              <button className="btn btn-light border-0 px-2" onClick={() => onQty(item.productId, item.quantity - 1, item.variantSize)}>-</button>
+                              <button className="btn btn-light border-0 px-2" onClick={() => onQty(item.productId, item.quantity - 1, item.variantSize, item.variantColor)}>-</button>
                               <span className="form-control text-center border-0 bg-white small p-0 d-flex align-items-center justify-content-center fw-bold">{item.quantity}</span>
-                              <button className="btn btn-light border-0 px-2" onClick={() => onQty(item.productId, item.quantity + 1, item.variantSize)}>+</button>
+                              <button className="btn btn-light border-0 px-2" onClick={() => onQty(item.productId, item.quantity + 1, item.variantSize, item.variantColor)}>+</button>
                             </div>
                             <div className="ms-auto fw-bold text-primary small">₹{item.lineTotal?.toFixed(0)}</div>
                           </div>
@@ -615,10 +778,10 @@ export default function ClientApp() {
                   </div>
 
                   <div className="d-grid gap-2">
-                    <button className="btn btn-primary py-2 rounded-pill fw-bold shadow-sm" onClick={() => { setShowCart(false); onCheckout(); }}>
+                    <button type="button" className="btn btn-primary py-2 rounded-pill fw-bold shadow-sm" onClick={() => { setShowCart(false); onCheckout(); }}>
                       Secure Checkout <i className="bi bi-arrow-right ms-1"></i>
                     </button>
-                    <button className="btn btn-link text-danger btn-sm text-decoration-none fw-bold opacity-75" onClick={onClear}>
+                    <button type="button" className="btn btn-link text-danger btn-sm text-decoration-none fw-bold opacity-75" onClick={onClear}>
                       <i className="bi bi-trash3 me-1"></i> Clear My Bag
                     </button>
                   </div>
@@ -629,105 +792,221 @@ export default function ClientApp() {
         </div>
 
         {/* Backdrop for Offcanvas */}
-        {showCart && <div className="offcanvas-backdrop fade show" style={{ zIndex: 3900 }} onClick={() => setShowCart(false)}></div>}
+        {showCart && (
+          <div
+            className="offcanvas-backdrop fade show"
+            style={{ zIndex: 3900, backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
+            onClick={() => setShowCart(false)}
+          ></div>
+        )}
 
         {step === 'shop' && (
-          <div className="row g-4">
+          <div className="row g-4 mx-0">
             {/* Main Content: Offers + Products */}
             <div className="col-12">
               <OffersCarousel coupons={coupons} />
 
               <TrustBadges />
 
-              {/* Search & Filter */}
-              <div className="mb-4 sticky-top bg-light bg-opacity-75 backdrop-blur py-2 mt-3" style={{ top: '90px', zIndex: 1000 }}>
-                <div className="d-flex align-items-center gap-2">
-                  <div className="flex-grow-1" style={{ maxWidth: '300px' }}>
-                    <div className="input-group shadow-sm rounded-pill overflow-hidden border bg-white ps-2">
-                      <span className="input-group-text bg-transparent border-0 p-0 ps-2">
-                        <i className="bi bi-search text-primary small"></i>
-                      </span>
-                      <input
-                        className="form-control border-0 shadow-none ps-2 py-1 fw-medium small"
-                        placeholder="Search..."
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        style={{ height: '36px' }}
-                      />
+              <div className="sticky-top py-2 py-md-3 bg-white border-bottom shadow-sm" style={{
+                top: 'calc(clamp(65px, 12vh, 125px) + clamp(15px, 3vh, 30px))',
+                zIndex: 1010,
+                marginLeft: '-12px',
+                marginRight: '-12px',
+                paddingLeft: '12px',
+                paddingRight: '12px',
+                marginTop: 'clamp(15px, 3vh, 20px)'
+              }}>
+                <form
+                  onSubmit={(e) => e.preventDefault()}
+                  className="d-flex align-items-center rounded-pill px-3 mx-auto transition-all"
+                  style={{
+                    maxWidth: '700px',
+                    backgroundColor: '#fcfaff',
+                    border: searchFocus ? '1px solid #6d28d9' : '1px solid #f0e8ff',
+                    boxShadow: searchFocus ? '0 4px 20px rgba(109, 40, 217, 0.1)' : '0 2px 10px rgba(0,0,0,0.02)'
+                  }}
+                >
+                  <i className={`bi bi-search ${searchFocus ? 'text-primary' : 'text-muted'}`} style={{ fontSize: '18px' }}></i>
+                  <input
+                    className="form-control border-0 shadow-none ps-3 py-2 fw-medium bg-transparent"
+                    placeholder="Search for gifts, cakes, decor..."
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onFocus={() => setSearchFocus(true)}
+                    onBlur={() => setSearchFocus(false)}
+                    style={{ fontSize: '16px', color: '#4b5563' }}
+                  />
+                </form>
+              </div>
+
+              <div className="container-fluid px-3 px-md-4 mt-4">
+                <div className="row g-4">
+                  {/* Desktop Sidebar Filter */}
+                  <div className="col-md-3 d-none d-md-block">
+                    <div className="card border-0 shadow-sm p-3 sticky-top no-scrollbar" style={{
+                      top: 'calc(clamp(65px, 12vh, 125px) + 100px)',
+                      borderRadius: '24px',
+                      maxHeight: 'calc(100vh - (clamp(65px, 12vh, 125px) + 130px))',
+                      overflowY: 'auto',
+                      zIndex: 1005
+                    }}>
+                      <h6 className="fw-extrabold text-uppercase text-muted mb-3 tracking-widest">Categories</h6>
+                      <div className="d-flex flex-column gap-1">
+                        {categories.map((c) => {
+                          const iconMap = {
+                            'All': 'bi-grid-fill',
+                            'Cakes': 'bi-cake2',
+                            'Flowers': 'bi-flower1',
+                            'Coffee Mugs': 'bi-cup-hot',
+                            'Frames': 'bi-image',
+                            'Keychains': 'bi-key',
+                            'Lamps': 'bi-lamp',
+                            'Personalized': 'bi-person-heart',
+                            'Decor': 'bi-house-heart',
+                            'Gift Boxes': 'bi-gift',
+                            'Clocks': 'bi-clock'
+                          };
+                          const icon = iconMap[c] || 'bi-bag-heart';
+                          return (
+                            <button
+                              key={c}
+                              type="button"
+                              className={`btn text-start py-2 px-3 fw-bold rounded-3 d-flex align-items-center gap-3 ${category === c ? 'btn-primary shadow-sm' : 'btn-light bg-transparent text-dark border-0 hover-bg-light'}`}
+                              onClick={() => setCategory(c)}
+                              style={{ fontSize: '18px' }}
+                            >
+                              <i className={`bi ${icon} fs-5`}></i>
+                              {c}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="mt-4 pt-4 border-top">
+                        <div className="alert alert-primary bg-primary bg-opacity-10 border-0 p-3 rounded-4 mb-0">
+                          <i className="bi bi-stars text-primary mb-2 d-block fs-4"></i>
+                          <div className="fw-bold smallest text-dark mb-1">New Arrivals Soon!</div>
+                          <div className="text-muted smallest" style={{ lineHeight: '1.4' }}>Stay tuned for our upcoming Valentines collection.</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex-grow-1 overflow-hidden">
-                    <div className="d-flex gap-1 overflow-auto pb-1 no-scrollbar flex-nowrap align-items-center" style={{ height: '40px' }}>
-                      {categories.map((c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          className={`btn btn-sm rounded-pill px-3 fw-bold transition-all border-0 shadow-sm smallest ${category === c ? 'btn-primary' : 'bg-white text-muted'}`}
-                          onClick={() => setCategory(c)}
-                          style={{ whiteSpace: 'nowrap', height: '32px' }}
-                        >
-                          {c}
-                        </button>
+
+                  {/* Product Content Area */}
+                  <div className="col-12 col-md-9">
+                    {/* Mobile Category Scroll (Visible only on mobile) */}
+                    <div className="d-md-none mb-4 overflow-hidden">
+                      <div className="d-flex gap-2 overflow-auto pb-2 no-scrollbar flex-nowrap align-items-center">
+                        {categories.map((c) => {
+                          const iconMap = {
+                            'All': 'bi-grid-fill',
+                            'Cakes': 'bi-cake2',
+                            'Flowers': 'bi-flower1',
+                            'Coffee Mugs': 'bi-cup-hot',
+                            'Frames': 'bi-image',
+                            'Keychains': 'bi-key',
+                            'Lamps': 'bi-lamp',
+                            'Personalized': 'bi-person-heart',
+                            'Decor': 'bi-house-heart',
+                            'Gift Boxes': 'bi-gift'
+                          };
+                          const icon = iconMap[c] || 'bi-bag-heart';
+                          return (
+                            <button
+                              key={c}
+                              type="button"
+                              className={`btn rounded-pill px-4 fw-bold border-0 shadow-sm d-flex align-items-center gap-2 ${category === c ? 'btn-primary' : 'bg-white text-dark'}`}
+                              onClick={() => setCategory(c)}
+                              style={{ whiteSpace: 'nowrap', height: '44px', fontSize: '16px' }}
+                            >
+                              <i className={`bi ${icon} fs-5`}></i>
+                              {c}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Results Count & Product Grid */}
+                    <div className="d-flex justify-content-between align-items-center mb-4">
+                      <div>
+                        <span className="fw-extrabold h4 mb-0">{category}</span>
+                        <span className="text-muted ms-2 smallest fw-bold">{filtered.length} Items</span>
+                      </div>
+                    </div>
+
+                    <div className="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-2 g-md-4 mb-5">
+                      {filtered.map((p) => (
+                        <div className="col" key={p.id}>
+                          <ProductCard product={p} onAdd={onAdd} />
+                        </div>
                       ))}
                     </div>
+
+                    {/* Footer inside Content Area */}
+                    <footer className="mt-5 pt-5 border-top text-center pb-5">
+                      <img src={logo} alt="Logo" className="rounded-circle mb-3 border shadow-sm" style={{ width: 60, height: 60, objectFit: 'cover' }} />
+                      <h5 className="fw-bold">Sparkle Gift Shop</h5>
+                      <p className="text-muted small mb-4 mx-auto" style={{ maxWidth: '400px' }}>Providing premium personalized gifts to make your special moments even more memorable. Handcrafted with love.</p>
+                      <div className="smallest text-muted fw-bold text-uppercase opacity-50">© 2026 Sparkle Gift Shop. All Rights Reserved.</div>
+                    </footer>
                   </div>
                 </div>
               </div>
-
-              <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-2 g-md-3 mb-5">
-                {filtered.map((p) => (
-                  <div className="col" key={p.id}>
-                    <ProductCard product={p} onAdd={onAdd} />
-                  </div>
-                ))}
-              </div>
-
-              {/* Footer Section */}
-              <footer className="mt-4 pt-4 border-top text-center pb-4">
-                <img src={logo} alt="Logo" className="rounded-circle mb-3 border shadow-sm" style={{ width: 60, height: 60, objectFit: 'cover' }} />
-                <h5 className="fw-bold">Sparkle Gift Shop</h5>
-                <p className="text-muted small mb-4 mx-auto" style={{ maxWidth: '400px' }}>Providing premium personalized gifts to make your special moments even more memorable. Handcrafted with love. Delivering happiness Across Tamilnadu.</p>
-                <div className="smallest text-muted fw-bold text-uppercase opacity-50">© 2024 Sparkle Gift Shop. All Rights Reserved.</div>
-              </footer>
             </div>
           </div>
         )}
 
         {step === 'checkout' && !paymentStep && (
-          <div className="row justify-content-center animate-slide-up">
+          <div className="row justify-content-center">
             <div className="col-md-8 col-lg-6">
               <div className="card border-0 shadow-lg p-3 pt-4">
-                <div className="card-header bg-white border-0 pt-0 d-flex justify-content-between align-items-center">
-                  <h3 className="mb-0 fw-extrabold">Shipping Details</h3>
-                  <button className="btn btn-link text-decoration-none fw-bold" onClick={() => setStep('shop')}><i className="bi bi-arrow-left"></i> Change Items</button>
+                <div className="card-header bg-white border-0 pt-0 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 mb-3">
+                  <h3 className="mb-0 fw-extrabold h4">Shipping Details</h3>
+                  <button type="button" className="btn btn-link text-decoration-none fw-bold small d-flex align-items-center gap-1 p-0" onClick={() => setStep('shop')}>
+                    <i className="bi bi-arrow-left"></i> Change Items
+                  </button>
                 </div>
                 <div className="card-body">
-                  <div className="bg-light bg-opacity-75 p-3 rounded-4 mb-4 border border-white">
-                    <div className="fw-bold mb-2 small text-uppercase text-muted tracking-wide">Order Summary</div>
-                    <table className="table table-sm mb-0 table-borderless">
-                      <tbody>
-                        <tr>
-                          <td className="small text-muted py-1">Items ({cart.items.length})</td>
-                          <td className="text-end small fw-bold py-1">₹{cart.total?.toFixed(2)}</td>
-                        </tr>
-                        {discount > 0 && (
-                          <tr>
-                            <td className="small text-success py-1">Coupon Discount</td>
-                            <td className="text-end small fw-bold text-success py-1">-₹{discount.toFixed(2)}</td>
-                          </tr>
-                        )}
-                        <tr>
-                          <td className="small text-muted py-1">Delivery Charge</td>
-                          <td className="text-end small fw-bold text-success py-1">FREE</td>
-                        </tr>
-                      </tbody>
-                      <tfoot className="border-top mt-2">
-                        <tr className="fw-extrabold fs-4">
-                          <td className="text-start pt-2">Total</td>
-                          <td className="text-end text-primary pt-2">₹{finalTotal.toFixed(2)}</td>
-                        </tr>
-                      </tfoot>
-                    </table>
+                  <div className="bg-light p-3 p-md-4 rounded-4 mb-4 border shadow-sm">
+                    <div className="fw-extrabold mb-3 small text-uppercase text-muted tracking-widest text-center" style={{ fontSize: '10px' }}>Order Summary</div>
+
+                    {/* Items Detail List */}
+                    <div className="mb-3 border-bottom pb-2">
+                      {cart.items.map((item, idx) => (
+                        <div key={idx} className="d-flex align-items-center gap-3 mb-3">
+                          <img src={item.product?.image || logo} alt="" className="rounded-3 border shadow-sm" style={{ width: '45px', height: '45px', objectFit: 'cover' }} />
+                          <div className="flex-grow-1 min-w-0">
+                            <div className="small fw-bold text-dark text-truncate" style={{ fontSize: '13px' }}>{item.product?.name} {item.variantSize && `(${item.variantSize})`}</div>
+                            <div className="smallest text-muted fw-medium">Qty: {item.quantity} x ₹{item.variantPrice || item.product?.price}</div>
+                          </div>
+                          <div className="small fw-extrabold text-dark px-2 py-1 rounded-2 bg-white border">₹{item.lineTotal?.toFixed(0)}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="d-flex flex-column gap-2 mb-3">
+                      <div className="d-flex justify-content-between align-items-center px-1">
+                        <span className="small text-muted fw-medium">Subtotal</span>
+                        <span className="small fw-bold text-dark">₹{cart.total?.toFixed(2)}</span>
+                      </div>
+                      {discount > 0 && (
+                        <div className="d-flex justify-content-between align-items-center bg-success bg-opacity-10 p-2 rounded-3">
+                          <span className="small text-success fw-bold">Coupon Discount</span>
+                          <span className="small fw-extrabold text-success">-₹{discount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="d-flex justify-content-between align-items-center px-1">
+                        <span className="small text-muted fw-medium">Delivery</span>
+                        <span className="small fw-extrabold text-success text-uppercase">Free</span>
+                      </div>
+                    </div>
+
+                    <div className="d-flex justify-content-between align-items-center pt-3 border-top px-1">
+                      <span className="fw-extrabold text-dark h4 mb-0">Total Amount</span>
+                      <span className="h3 mb-0 text-primary fw-extrabold">₹{finalTotal.toFixed(2)}</span>
+                    </div>
                   </div>
 
                   <div className="mb-3">
@@ -790,6 +1069,6 @@ export default function ClientApp() {
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 }

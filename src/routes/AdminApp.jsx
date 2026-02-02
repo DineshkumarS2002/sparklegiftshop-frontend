@@ -1,5 +1,6 @@
 // Owner Admin Dashboard
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import logo from '../assets/sparkle_logo.jpg';
 import {
   ownerCreateProduct,
@@ -18,93 +19,12 @@ import {
   ownerToggleDispatch,
   ownerTogglePayment,
   ownerUpdateOrderTracking,
-  API_BASE_URL
+  API_BASE_URL,
+  adminFetchAdmins,
+  adminCreateAdmin,
+  adminDeleteAdmin
 } from '../api/ownerApi';
 
-function TrackingModal({ order, onClose, onUpdate }) {
-  const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    courierPartner: order.courierPartner || '',
-    trackingId: order.trackingId || '',
-    message: '',
-    location: ''
-  });
-
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const updated = await ownerUpdateOrderTracking(order.id, form);
-      onUpdate(updated);
-      onClose();
-    } catch (err) {
-      alert('Failed to update tracking');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="modal show d-block shadow" style={{ backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 2000 }}>
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content border-0 shadow-lg" style={{ borderRadius: '1.25rem' }}>
-          <div className="modal-header border-0 pt-4 px-4 pb-0">
-            <h5 className="fw-extrabold mb-0">Update Tracking - {order.invoiceId}</h5>
-            <button type="button" className="btn-close" onClick={onClose}></button>
-          </div>
-          <form onSubmit={onSubmit}>
-            <div className="modal-body px-4 pt-4">
-              <div className="mb-3">
-                <label className="small fw-bold text-muted text-uppercase mb-1">Courier Partner</label>
-                <input
-                  className="form-control shadow-none"
-                  placeholder="e.g. Professional Courier"
-                  value={form.courierPartner}
-                  onChange={e => setForm({ ...form, courierPartner: e.target.value })}
-                />
-              </div>
-              <div className="mb-3">
-                <label className="small fw-bold text-muted text-uppercase mb-1">Tracking ID</label>
-                <input
-                  className="form-control shadow-none"
-                  placeholder="e.g. PC123456789"
-                  value={form.trackingId}
-                  onChange={e => setForm({ ...form, trackingId: e.target.value })}
-                />
-              </div>
-              <hr className="my-4 opacity-10" />
-              <h6 className="small fw-extrabold text-primary text-uppercase mb-3">Add Location/Message Update</h6>
-              <div className="mb-3">
-                <label className="small fw-bold text-muted text-uppercase mb-1">Status Message</label>
-                <input
-                  className="form-control shadow-none"
-                  placeholder="e.g. Package arrived at hub"
-                  value={form.message}
-                  onChange={e => setForm({ ...form, message: e.target.value })}
-                />
-              </div>
-              <div className="mb-3">
-                <label className="small fw-bold text-muted text-uppercase mb-1">Location</label>
-                <input
-                  className="form-control shadow-none"
-                  placeholder="e.g. Chennai, TN"
-                  value={form.location}
-                  onChange={e => setForm({ ...form, location: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="modal-footer border-0 pb-4 px-4 pt-0">
-              <button type="button" className="btn btn-light rounded-pill px-4 fw-bold" onClick={onClose}>Cancel</button>
-              <button type="submit" className="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" disabled={loading}>
-                {loading ? 'Updating...' : 'Save Tracking'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-}
 import { Link } from 'react-router-dom';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import {
@@ -261,8 +181,16 @@ function ProductForm({ form, setForm, onSubmit, editing, onCancel }) {
                           {variant.image && (
                             <img src={variant.image} alt="v" className="rounded" style={{ width: 30, height: 30, objectFit: 'cover' }} />
                           )}
-                          <span className="badge bg-primary">{variant.size}</span>
-                          <span className="small">₹{variant.price}</span>
+                          <div className="d-flex flex-column" style={{ minWidth: '60px' }}>
+                            {variant.size && <span className="badge bg-primary mb-1" style={{ fontSize: '10px' }}>{variant.size}</span>}
+                            {variant.color && (
+                              <div className="d-flex align-items-center gap-1">
+                                <span className="rounded-circle border" style={{ width: 14, height: 14, backgroundColor: variant.color }}></span>
+                                <span className="smallest text-muted" style={{ fontSize: '9px' }}>{variant.color}</span>
+                              </div>
+                            )}
+                          </div>
+                          <span className="small fw-bold ms-2">₹{variant.price}</span>
                           {variant.originalPrice && <span className="small text-muted text-decoration-line-through">₹{variant.originalPrice}</span>}
                           <button
                             type="button"
@@ -309,6 +237,14 @@ function ProductForm({ form, setForm, onSubmit, editing, onCancel }) {
                         <input
                           type="text"
                           className="form-control form-control-sm"
+                          placeholder="Color (e.g., #ff0000)"
+                          id="variantColor"
+                        />
+                      </div>
+                      <div className="col-md-3">
+                        <input
+                          type="text"
+                          className="form-control form-control-sm"
                           placeholder="Image URL (Optional)"
                           id="variantImage"
                         />
@@ -319,23 +255,35 @@ function ProductForm({ form, setForm, onSubmit, editing, onCancel }) {
                           className="btn btn-sm btn-primary w-100"
                           onClick={() => {
                             const size = document.getElementById('variantSize').value;
+                            const color = document.getElementById('variantColor').value;
                             const price = document.getElementById('variantPrice').value;
                             const originalPrice = document.getElementById('variantOriginalPrice').value;
                             const image = document.getElementById('variantImage').value;
 
-                            if (size && price) {
-                              const newVariant = {
-                                size,
-                                price: parseFloat(price),
-                                originalPrice: originalPrice ? parseFloat(originalPrice) : null,
-                                image: image || ''
-                              };
-                              setForm(f => ({ ...f, variants: [...(f.variants || []), newVariant] }));
-                              document.getElementById('variantSize').value = '';
-                              document.getElementById('variantPrice').value = '';
-                              document.getElementById('variantOriginalPrice').value = '';
-                              document.getElementById('variantImage').value = '';
+                            if (!price) {
+                              alert('Please enter a price for the variant');
+                              return;
                             }
+                            if (!size && !color) {
+                              alert('Please entering at least a Size or a Color');
+                              return;
+                            }
+
+                            const newVariant = {
+                              size: size || '',
+                              color: color || '',
+                              price: parseFloat(price),
+                              originalPrice: originalPrice ? parseFloat(originalPrice) : null,
+                              image: image || ''
+                            };
+                            setForm(f => ({ ...f, variants: [...(f.variants || []), newVariant] }));
+
+                            // Reset inputs
+                            document.getElementById('variantSize').value = '';
+                            document.getElementById('variantColor').value = '';
+                            document.getElementById('variantPrice').value = '';
+                            document.getElementById('variantOriginalPrice').value = '';
+                            document.getElementById('variantImage').value = '';
                           }}
                         >
                           <i className="bi bi-plus-lg"></i> Add Variant
@@ -384,11 +332,11 @@ function ProductForm({ form, setForm, onSubmit, editing, onCancel }) {
             </div>
           </div>
 
-          <div className="pt-4 mt-4 text-end d-flex justify-content-end gap-2">
-            <button type="button" className="btn btn-light border fw-bold px-4 rounded-3" onClick={onCancel}>Discard</button>
-            <button type="submit" className="btn btn-dark px-5 fw-bold btn-lg rounded-3 shadow-sm d-flex align-items-center gap-2">
-              <i className="bi bi-check2-circle"></i>
-              {editing ? 'Save Changes' : 'Publish Product'}
+          <div className="pt-4 mt-4 d-flex flex-column flex-sm-row justify-content-end gap-2 px-1">
+            <button type="button" className="btn btn-light border fw-bold px-4" style={{ borderRadius: '12px', minHeight: '52px' }} onClick={onCancel}>Discard</button>
+            <button type="submit" className="btn btn-dark px-5 fw-bold d-flex align-items-center justify-content-center gap-3 shadow-none border-0" style={{ backgroundColor: '#1c1c1f', color: '#fff', borderRadius: '12px', minHeight: '52px', fontSize: '16px' }}>
+              <i className="bi bi-check-circle-fill" style={{ fontSize: '18px' }}></i>
+              <span>{editing ? 'Save Changes' : 'Publish Product'}</span>
             </button>
           </div>
         </form>
@@ -525,7 +473,8 @@ function SettingsPanel({ settings, setSettings, onSave, saving }) {
   );
 }
 
-function OrdersList({ orders, onWhatsApp, onDeleteOrder, onToggleDispatch, onTogglePayment, onPreview, onTracking }) {
+function OrdersList({ orders, onWhatsApp, onDeleteOrder, onToggleDispatch, onTogglePayment, onToggleDelivered, onPreview }) {
+  const navigate = useNavigate();
   if (orders.length === 0) return <div className="text-center p-5 text-muted">No orders found.</div>;
   return (
     <div className="row g-3">
@@ -535,67 +484,90 @@ function OrdersList({ orders, onWhatsApp, onDeleteOrder, onToggleDispatch, onTog
         const deliveryFee = o.deliveryFee || 0;
 
         return (
-          <div key={o.id} className="col-12 col-md-6 col-xl-4">
-            <div className="card h-100 border-0 shadow-sm transition-all hover-shadow">
-              <div className="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-3 pb-0">
-                <div className="d-flex align-items-center gap-2">
-                  <span className="badge bg-light text-dark border">Invoice No: {o.invoiceId}</span>
+          <div key={o.id} className="col-12 col-lg-6 col-xl-4">
+            <div className="card h-100 border-0 shadow-sm transition-all hover-shadow" style={{ borderRadius: '12px' }}>
+              {/* Header Section */}
+              <div className="card-header bg-gradient bg-opacity-10 border-0 pt-3 pb-2">
+                <div className="d-flex justify-content-between align-items-start mb-2">
+                  <div className="d-flex align-items-center gap-2">
+                    <span className="badge bg-dark text-white px-3 py-2" style={{ fontSize: '11px', letterSpacing: '0.5px' }}>
+                      <i className="bi bi-receipt me-1"></i> {o.invoiceId}
+                    </span>
+                    <span className="badge bg-light text-muted border" style={{ fontSize: '10px' }}>
+                      {new Date(o.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                    </span>
+                  </div>
                   <button className="btn btn-sm btn-link text-danger p-0 shadow-none border-0" onClick={() => onDeleteOrder(o.id)} title="Delete Invoice">
                     <i className="bi bi-trash3"></i>
                   </button>
                 </div>
-                <div className="d-flex gap-2">
+
+                {/* Status Badges Row */}
+                <div className="d-flex flex-wrap gap-2">
                   <button
-                    className={`btn btn-sm py-1 px-2 rounded-pill fw-bold border ${o.dispatched ? 'btn-success' : 'btn-warning text-dark'}`}
+                    type="button"
+                    className={`btn btn-sm py-1 px-3 rounded-pill fw-bold border-0 ${o.dispatched ? 'bg-success text-white' : 'bg-warning text-dark'}`}
                     onClick={() => onToggleDispatch(o.id, o.dispatched)}
                     style={{ fontSize: '10px' }}
+                    title="Toggle Dispatch Status"
                   >
-                    {o.dispatched ? <><i className="bi bi-truck"></i> DISPATCHED</> : <><i className="bi bi-clock"></i> PENDING</>}
+                    <i className={`bi ${o.dispatched ? 'bi-truck' : 'bi-clock-history'} me-1`}></i>
+                    {o.dispatched ? 'DISPATCHED' : 'PENDING'}
                   </button>
                   <button
-                    className={`btn btn-sm py-1 px-2 rounded-pill fw-bold border ${o.isPaid ? 'btn-success' : 'btn-danger'}`}
+                    type="button"
+                    className={`btn btn-sm py-1 px-3 rounded-pill fw-bold border-0 ${o.isPaid ? 'bg-success text-white' : 'bg-success bg-opacity-75 text-white'}`}
                     onClick={() => onTogglePayment(o.id, o.isPaid)}
                     style={{ fontSize: '10px' }}
+                    title="Toggle Payment Status"
                   >
-                    {o.isPaid ? <><i className="bi bi-cash-stack"></i> PAID</> : <><i className="bi bi-x-circle"></i> UNPAID</>}
+                    <i className={`bi ${o.isPaid ? 'bi-check-circle-fill' : 'bi-x-circle-fill'} me-1`}></i>
+                    {o.isPaid ? 'PAID' : 'UNPAID'}
                   </button>
                   <span
-                    className={`btn btn-sm py-1 px-2 rounded-pill fw-bold border bg-light text-dark`}
-                    style={{ fontSize: '10px', cursor: 'default' }}
-                  >
-                    {o.paymentMethod === 'cod' ? <><i className="bi bi-cash me-1"></i> COD</> : <><i className="bi bi-qr-code-scan me-1"></i> UPI</>}
-                  </span>
-                  <button
-                    className="btn btn-sm py-1 px-2 rounded-pill fw-bold border btn-info text-white"
-                    onClick={() => onTracking(o)}
+                    className="badge bg-light text-dark border px-3 py-2"
                     style={{ fontSize: '10px' }}
                   >
-                    <i className="bi bi-geo-alt-fill me-1"></i> TRACKING
+                    <i className={`bi ${o.paymentMethod === 'cod' ? 'bi-cash' : 'bi-qr-code-scan'} me-1`}></i>
+                    {o.paymentMethod === 'cod' ? 'COD' : 'UPI'}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-sm py-1 px-3 rounded-pill fw-bold border-0 bg-info text-white"
+                    onClick={() => navigate(`/admin/tracking/${o.id}`)}
+                    style={{ fontSize: '10px' }}
+                    title="Update Tracking Details"
+                  >
+                    <i className="bi bi-geo-alt-fill me-1"></i> TRACK
                   </button>
                 </div>
 
               </div>
-              <div className="card-body d-flex flex-column" style={{ minHeight: '360px' }}>
+              {/* Card Body */}
+              <div className="card-body d-flex flex-column p-3">
+                {/* Payment Screenshot Section */}
                 {o.paymentScreenshot ? (
-                  <div className="mb-3">
+                  <div className="mb-3 p-2 bg-light rounded border">
                     <div className="d-flex justify-content-between align-items-center mb-2">
-                      <span className="fw-bold text-muted text-uppercase" style={{ fontSize: '10px', letterSpacing: '0.5px' }}>
-                        <i className="bi bi-image me-1"></i> Payment Proof
+                      <span className="fw-bold text-dark" style={{ fontSize: '11px' }}>
+                        <i className="bi bi-image-fill me-1 text-primary"></i> Payment Proof
                       </span>
-                      <span className="badge bg-success-subtle text-success border border-success border-opacity-10 rounded-pill" style={{ fontSize: '9px' }}>Uploaded</span>
+                      <span className="badge bg-success text-white rounded-pill" style={{ fontSize: '9px' }}>
+                        <i className="bi bi-check-circle-fill me-1"></i>Verified
+                      </span>
                     </div>
                     <div
-                      className="position-relative overflow-hidden rounded border border-2 border-primary border-opacity-10 shadow-sm hover-grow"
-                      style={{ cursor: 'pointer', height: '80px', width: '80px' }}
+                      className="position-relative overflow-hidden rounded border border-2 border-success shadow-sm"
+                      style={{ cursor: 'pointer', height: '100px', width: '100px' }}
                       onClick={() => onPreview(o.paymentScreenshot)}
                     >
                       <img
                         src={o.paymentScreenshot}
-                        alt="Proof"
-                        className="w-100 h-100 object-fit-cover transition-all"
+                        alt="Payment Proof"
+                        className="w-100 h-100 object-fit-cover"
                       />
-                      <div className="position-absolute bottom-0 end-0 bg-dark bg-opacity-50 text-white p-1 rounded-start px-2" style={{ fontSize: '10px' }}>
-                        <i className="bi bi-zoom-in me-1"></i> Zoom
+                      <div className="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white text-center py-1" style={{ fontSize: '10px' }}>
+                        <i className="bi bi-zoom-in me-1"></i> Click to Zoom
                       </div>
                     </div>
                   </div>
@@ -603,73 +575,110 @@ function OrdersList({ orders, onWhatsApp, onDeleteOrder, onToggleDispatch, onTog
                   o.paymentMethod === 'upi' && (
                     <div className="alert alert-warning py-2 mb-3 small border-0 d-flex align-items-center">
                       <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                      <span>No screenshot uploaded yet</span>
+                      <span>Awaiting payment screenshot</span>
                     </div>
                   )
                 )}
 
-                <div className="mb-3">
-                  <h5 className="fw-bold mb-1 text-dark">{o.customerName}</h5>
-                  <a href={`tel:${o.phone}`} className="text-primary fw-bold small text-decoration-none d-block mb-2">
-                    <i className="bi bi-telephone-fill me-1"></i> {o.phone}
-                  </a>
-                  <div className="text-muted small border rounded p-2 bg-light">
-                    <i className="bi bi-geo-alt-fill me-1 text-danger"></i> <strong>Address:</strong> {o.address || 'No address provided'}
+                {/* Customer Info Section */}
+                <div className="mb-3 p-2 bg-light rounded">
+                  <div className="d-flex align-items-start gap-2 mb-2">
+                    <div className="bg-primary bg-opacity-10 rounded-circle p-2" style={{ width: '36px', height: '36px' }}>
+                      <i className="bi bi-person-fill text-primary"></i>
+                    </div>
+                    <div className="flex-grow-1">
+                      <h6 className="fw-bold mb-1 text-dark" style={{ fontSize: '14px' }}>{o.customerName}</h6>
+                      <a href={`tel:${o.phone}`} className="text-primary fw-semibold text-decoration-none d-flex align-items-center" style={{ fontSize: '12px' }}>
+                        <i className="bi bi-telephone-fill me-1"></i> {o.phone}
+                      </a>
+                    </div>
+                  </div>
+                  <div className="text-muted small border-start border-3 border-danger ps-2 py-1">
+                    <i className="bi bi-geo-alt-fill me-1 text-danger"></i>
+                    <strong>Address:</strong> {o.address || 'No address provided'}
                   </div>
                 </div>
 
+                {/* Customer Note */}
                 {o.note && (
-                  <div className="alert alert-warning py-1 px-2 mb-3 small border-0">
-                    <i className="bi bi-sticky-fill me-1"></i> <strong>Note:</strong> {o.note}
+                  <div className="alert alert-info py-2 px-3 mb-3 border-0 border-start border-4 border-info" style={{ fontSize: '12px' }}>
+                    <i className="bi bi-sticky-fill me-2"></i>
+                    <strong>Note:</strong> {o.note}
                   </div>
                 )}
 
+                {/* Order Items Section */}
                 <div className="mb-3 flex-grow-1">
-                  <p className="fw-bold text-muted text-uppercase mb-2" style={{ fontSize: '10px', letterSpacing: '0.5px' }}>Order Items</p>
-                  <div className="order-items-scroll no-scrollbar" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                  <div className="d-flex align-items-center justify-content-between mb-2">
+                    <p className="fw-bold text-dark mb-0" style={{ fontSize: '12px' }}>
+                      <i className="bi bi-bag-check-fill me-1 text-primary"></i> Order Items
+                    </p>
+                    <span className="badge bg-primary bg-opacity-10 text-primary" style={{ fontSize: '10px' }}>
+                      {o.items.length} {o.items.length === 1 ? 'Item' : 'Items'}
+                    </span>
+                  </div>
+                  <div className="order-items-scroll" style={{ maxHeight: '180px', overflowY: 'auto', overflowX: 'hidden' }}>
                     {o.items.map((i, idx) => (
-                      <div key={idx} className="d-flex align-items-center gap-2 mb-2 border-bottom border-light pb-2">
+                      <div key={idx} className="d-flex align-items-center gap-2 mb-2 p-2 bg-light rounded border">
                         <img
-                          src={i.product?.image || 'https://via.placeholder.com/40'}
-                          alt=""
-                          className="rounded border shadow-sm"
-                          style={{ width: 40, height: 40, objectFit: 'cover' }}
+                          src={i.product?.image || 'https://via.placeholder.com/50'}
+                          alt="Product"
+                          className="rounded shadow-sm"
+                          style={{ width: 50, height: 50, objectFit: 'cover' }}
                         />
                         <div className="flex-grow-1" style={{ minWidth: 0 }}>
-                          <div className="fw-bold text-dark small" style={{ lineHeight: '1.2' }}>
-                            {i.product?.name || `Product ${i.productId}`} {i.variantSize && <span className="text-muted">({i.variantSize})</span>}
+                          <div className="fw-bold text-dark" style={{ fontSize: '12px', lineHeight: '1.3' }}>
+                            {i.product?.name || `Product ${i.productId}`}
+                            {i.variantSize && <span className="badge bg-secondary bg-opacity-25 text-dark ms-1" style={{ fontSize: '9px' }}>{i.variantSize}</span>}
                           </div>
-                          <div className="text-muted smallest">₹{i.variantPrice || i.product?.price} x {i.quantity}</div>
+                          <div className="text-muted" style={{ fontSize: '11px' }}>
+                            ₹{i.variantPrice || i.product?.price} × {i.quantity}
+                          </div>
                         </div>
-                        <div className="fw-bold text-dark small text-nowrap">₹{i.lineTotal?.toFixed(0)}</div>
+                        <div className="fw-bold text-primary" style={{ fontSize: '13px' }}>₹{i.lineTotal?.toFixed(0)}</div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="border-top pt-2 mt-auto">
-                  <div className="d-flex justify-content-between small text-muted mb-1 font-monospace">
-                    <span>Subtotal</span>
-                    <span>₹{subtotal.toFixed(2)}</span>
+                {/* Price Summary */}
+                <div className="border-top pt-3 mt-auto">
+                  <div className="d-flex justify-content-between mb-2" style={{ fontSize: '12px' }}>
+                    <span className="text-muted">Subtotal</span>
+                    <span className="fw-semibold text-dark">₹{subtotal.toFixed(2)}</span>
                   </div>
                   {discount > 0 && (
-                    <div className="d-flex justify-content-between small text-success mb-1 font-monospace">
-                      <span>Discount</span>
-                      <span>-₹{discount.toFixed(2)}</span>
+                    <div className="d-flex justify-content-between mb-2" style={{ fontSize: '12px' }}>
+                      <span className="text-success"><i className="bi bi-tag-fill me-1"></i>Discount</span>
+                      <span className="fw-semibold text-success">-₹{discount.toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="d-flex justify-content-between small text-muted mb-2 font-monospace">
-                    <span>Delivery Fee</span>
-                    <span>{deliveryFee > 0 ? `₹${deliveryFee.toFixed(2)}` : 'FREE'}</span>
+                  <div className="d-flex justify-content-between mb-3" style={{ fontSize: '12px' }}>
+                    <span className="text-muted">Delivery Fee</span>
+                    <span className="fw-semibold text-dark">{deliveryFee > 0 ? `₹${deliveryFee.toFixed(2)}` : <span className="badge bg-success text-white" style={{ fontSize: '10px' }}>FREE</span>}</span>
                   </div>
-                  <div className="d-flex justify-content-between align-items-center bg-light p-2 rounded border border-primary border-opacity-10 mt-1">
-                    <span className="h5 fw-bold mb-0 text-primary">₹{o.total?.toFixed(2)}</span>
-                    <div className="d-flex gap-1">
-                      <Link to={`/client/order/${o.invoiceId}/label`} target="_blank" className="btn btn-primary btn-sm rounded shadow-sm py-1 px-3 fw-bold" style={{ fontSize: '11px' }}>
-                        <i className="bi bi-printer-fill me-1"></i> PRINT
+
+                  {/* Total & Actions */}
+                  <div className="bg-primary bg-opacity-10 p-3 rounded border border-primary border-opacity-25">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <span className="text-dark fw-semibold" style={{ fontSize: '13px' }}>Total Amount</span>
+                      <span className="h4 fw-bold mb-0 text-primary">₹{o.total?.toFixed(2)}</span>
+                    </div>
+                    <div className="d-flex gap-2">
+                      <Link
+                        to={`/client/order/${o.invoiceId}/label`}
+                        target="_blank"
+                        className="btn btn-primary btn-sm rounded-pill shadow-sm flex-grow-1 fw-bold"
+                        style={{ fontSize: '11px' }}
+                      >
+                        <i className="bi bi-printer-fill me-1"></i> PRINT LABEL
                       </Link>
-                      <button className="btn btn-success btn-sm rounded shadow-sm py-1 px-2 fw-bold" onClick={() => onWhatsApp(o)} style={{ fontSize: '11px' }}>
-                        <i className="bi bi-whatsapp me-1"></i> WA
+                      <button
+                        className="btn btn-success btn-sm rounded-pill shadow-sm fw-bold"
+                        onClick={() => onWhatsApp(o)}
+                        style={{ fontSize: '11px', minWidth: '80px' }}
+                      >
+                        <i className="bi bi-whatsapp me-1"></i> WhatsApp
                       </button>
                     </div>
                   </div>
@@ -787,7 +796,7 @@ function ReportsPanel({ range, setRange, data, onDownload, productData, reportUr
                 <button className="btn bg-white text-primary fw-bold flex-grow-1 shadow-sm" onClick={onDownload}>
                   <i className="bi bi-file-earmark-pdf-fill me-2"></i>PDF Report
                 </button>
-                <a href={`${API_BASE_URL}/reports/export?format=xlsx`} target="_blank" className="btn btn-outline-light fw-bold flex-grow-1">
+                <a href={`${API_BASE_URL}/admin/reports/export?format=xlsx`} target="_blank" className="btn btn-outline-light fw-bold flex-grow-1">
                   <i className="bi bi-file-earmark-spreadsheet-fill me-2"></i>Excel
                 </a>
               </div>
@@ -1057,6 +1066,151 @@ function CouponsPanel({ coupons, setCoupons, products }) {
     </div>
   );
 }
+function TeamsPanel({ admins, setAdmins }) {
+  const [form, setForm] = useState({ name: '', email: '', password: '', adminLevel: 'admin' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      await adminCreateAdmin(form);
+      setForm({ name: '', email: '', password: '', adminLevel: 'admin' });
+      const updated = await adminFetchAdmins();
+      setAdmins(updated);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create admin');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to remove this admin?')) return;
+    try {
+      await adminDeleteAdmin(id);
+      setAdmins(prev => prev.filter(a => a._id !== id));
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete');
+    }
+  };
+
+  return (
+    <div className="row g-4 mb-5">
+      <div className="col-lg-4">
+        <div className="card shadow-sm border-0 sticky-top" style={{ top: '160px' }}>
+          <div className="card-body p-4">
+            <h5 className="fw-bold mb-4">Add New Team Member</h5>
+            {error && <div className="alert alert-danger py-2 small">{error}</div>}
+            <form onSubmit={onSubmit}>
+              <div className="mb-3">
+                <label className="smallest text-muted text-uppercase fw-bold mb-1">Full Name</label>
+                <input
+                  className="form-control shadow-none border"
+                  value={form.name}
+                  onChange={e => setForm({ ...form, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="smallest text-muted text-uppercase fw-bold mb-1">Email Address</label>
+                <input
+                  type="email"
+                  className="form-control shadow-none border"
+                  value={form.email}
+                  onChange={e => setForm({ ...form, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="smallest text-muted text-uppercase fw-bold mb-1">Password</label>
+                <div className="input-group">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="form-control shadow-none border border-end-0"
+                    value={form.password}
+                    onChange={e => setForm({ ...form, password: e.target.value })}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="btn border border-start-0 bg-white text-muted"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    <i className={`bi bi-eye${showPassword ? '-slash' : ''}`}></i>
+                  </button>
+                </div>
+              </div>
+              <div className="mb-4">
+                <label className="smallest text-muted text-uppercase fw-bold mb-1">Access Level</label>
+                <select
+                  className="form-select shadow-none border text-capitalize"
+                  value={form.adminLevel}
+                  onChange={e => setForm({ ...form, adminLevel: e.target.value })}
+                >
+                  <option value="admin">Standard Admin</option>
+                  <option value="super_admin">Super Admin</option>
+                </select>
+              </div>
+              <button className="btn btn-primary w-100 rounded-pill fw-bold" disabled={loading}>
+                {loading ? 'Adding...' : 'Add Team Member'}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div className="col-lg-8">
+        <div className="card shadow-sm border-0">
+          <div className="card-body p-0">
+            <div className="table-responsive">
+              <table className="table table-hover align-middle mb-0">
+                <thead className="bg-light">
+                  <tr>
+                    <th className="px-4 py-3">Team Member</th>
+                    <th className="py-3 text-center">Level</th>
+                    <th className="py-3">Joined</th>
+                    <th className="px-4 py-3 text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {admins && admins.map(admin => (
+                    <tr key={admin._id}>
+                      <td className="px-4 py-3">
+                        <div className="d-flex align-items-center">
+                          <div className="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold me-3" style={{ width: 40, height: 40 }}>
+                            {admin.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="fw-bold">{admin.name}</div>
+                            <div className="smallest text-muted">{admin.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 text-center">
+                        <span className={`badge rounded-pill ${admin.adminLevel === 'super_admin' ? 'bg-danger bg-opacity-10 text-danger' : 'bg-primary bg-opacity-10 text-primary'}`}>
+                          {admin.adminLevel === 'super_admin' ? 'Super Admin' : 'Admin'}
+                        </span>
+                      </td>
+                      <td className="py-3 text-muted small">{new Date(admin.createdAt).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-end">
+                        <button className="btn btn-sm btn-outline-danger border-0 rounded-circle" onClick={() => onDelete(admin._id)} title="Delete Admin">
+                          <i className="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 
 function OwnerApp() {
@@ -1071,6 +1225,7 @@ function OwnerApp() {
   const [coupons, setCoupons] = useState([]);
   const [form, setForm] = useState(emptyProduct);
   const [editingId, setEditingId] = useState(null);
+  const [admins, setAdmins] = useState([]);
   const [status, setStatus] = useStatus('');
   const [settings, setSettings] = useState({ upiQrUrl: '', upiId: '', whatsappNumber: '', logoUrl: '', reportUrl: '', storeName: '' });
   useFavicon(settings.logoUrl);
@@ -1083,7 +1238,6 @@ function OwnerApp() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [previewImg, setPreviewImg] = useState(null);
-  const [trackingOrder, setTrackingOrder] = useState(null);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -1107,11 +1261,12 @@ function OwnerApp() {
 
     setLoading(true);
     try {
-      const [p, o, s, c] = await Promise.all([
+      const [p, o, s, c, a] = await Promise.all([
         ownerFetchProducts(),
         ownerFetchOrders(),
         ownerFetchSettings(),
-        ownerFetchCoupons()
+        ownerFetchCoupons(),
+        adminFetchAdmins()
       ]);
       setProducts(p);
       setOrders(o);
@@ -1120,6 +1275,7 @@ function OwnerApp() {
         localStorage.setItem('sparkle_owner_settings', JSON.stringify(s));
       }
       setCoupons(c);
+      setAdmins(a);
     } catch (err) {
       console.error(err);
       setStatus('Failed to load dashboard data');
@@ -1226,6 +1382,19 @@ function OwnerApp() {
     }
   };
 
+  const onToggleDelivered = async (id, currentStatus) => {
+    // Optimistic Update
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, delivered: !currentStatus } : o));
+
+    try {
+      await ownerToggleDelivered(id, !currentStatus);
+      setStatus(`Order marked as ${!currentStatus ? 'Delivered' : 'Not Delivered'}`);
+    } catch {
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, delivered: currentStatus } : o));
+      setStatus('Error updating delivery status');
+    }
+  };
+
   const onDeleteOrder = async (id) => {
     if (!window.confirm("Are you sure you want to delete this invoice?")) return;
     try {
@@ -1296,9 +1465,19 @@ function OwnerApp() {
             </div>
           </div>
           <div className="ms-auto">
-            <Link to="/" className="btn btn-sm btn-outline-primary rounded-pill px-3">
+            <Link to="/" target="_blank" className="btn btn-sm btn-outline-primary rounded-pill px-3 me-2">
               <i className="bi bi-shop"></i> <span className="d-none d-sm-inline">View Shop</span>
             </Link>
+            <button
+              className="btn btn-sm btn-danger rounded-pill px-3"
+              onClick={() => {
+                localStorage.removeItem('sparkle_token');
+                localStorage.removeItem('sparkle_user');
+                window.location.href = '/admin/login';
+              }}
+            >
+              <i className="bi bi-box-arrow-right"></i> <span className="d-none d-sm-inline">Logout</span>
+            </button>
           </div>
         </div>
       </nav>
@@ -1310,6 +1489,7 @@ function OwnerApp() {
               { id: 'orders', icon: 'bi-cart-check', label: 'Orders' },
               { id: 'products', icon: 'bi-box-seam', label: 'Products' },
               { id: 'coupons', icon: 'bi-ticket-perforated', label: 'Coupons' },
+              { id: 'teams', icon: 'bi-people', label: 'Teams' },
               { id: 'reports', icon: 'bi-graph-up', label: 'Reports' },
               { id: 'settings', icon: 'bi-gear', label: 'Settings' }
             ].map(t => (
@@ -1350,69 +1530,70 @@ function OwnerApp() {
             <>
               {showProductForm && <ProductForm form={form} setForm={setForm} onSubmit={onSubmit} editing={!!editingId} onCancel={() => { setShowProductForm(false); setEditingId(null); }} />}
 
-              <div className="card shadow-sm border-0 mb-4 bg-white">
-                <div className="card-body p-3">
-                  <div className="input-group shadow-sm rounded-pill overflow-hidden border">
-                    <span className="input-group-text bg-white border-0 ps-3">
-                      <i className="bi bi-search text-muted"></i>
-                    </span>
+              <div className="card shadow-sm border-0 mb-4 bg-white" style={{ borderRadius: '16px' }}>
+                <div className="card-body p-2">
+                  <div className="d-flex align-items-center rounded-pill px-3 py-1" style={{ backgroundColor: '#fcfaff', border: '1px solid #f0e8ff' }}>
+                    <i className="bi bi-search text-muted me-2" style={{ fontSize: '14px' }}></i>
                     <input
-                      className="form-control border-0 shadow-none ps-2 py-2"
+                      className="form-control border-0 shadow-none bg-transparent py-2"
                       placeholder="Search your product catalog..."
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
+                      style={{ fontSize: '15px', color: '#4b5563' }}
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 g-3 mb-5">
+              <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xl-6 g-3 mb-5">
                 {products.filter(p => !query || p.name.toLowerCase().includes(query.toLowerCase())).map(p => (
                   <div className="col" key={p.id}>
-                    <div className="card h-100 border-0 shadow-sm product-admin-card overflow-hidden group" style={{ borderRadius: '1rem', backgroundColor: '#fff' }}>
-                      <div className="position-relative overflow-hidden bg-light" style={{ aspectRatio: '3/4' }}>
+                    <div className="card h-100 border-0 shadow-sm overflow-hidden" style={{ borderRadius: '16px' }}>
+                      <div className="position-relative bg-light" style={{ aspectRatio: '1/1', overflow: 'hidden' }}>
                         <img
-                          src={p.image || 'https://via.placeholder.com/200?text=No+Image'}
-                          className="w-100 h-100 object-fit-cover transition-transform duration-500"
+                          src={p.image || logo}
                           alt={p.name}
-                          style={{ transition: 'transform 0.5s ease' }}
+                          className="w-100 h-100 object-fit-contain"
+                          style={{ backgroundColor: '#f8f9fa' }}
                         />
-                        {/* Overlay Actions */}
-                        <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-25 d-flex align-items-center justify-content-center gap-2 opacity-0 hover-opacity-100 transition-opacity duration-300">
-                          <button className="btn btn-light rounded-circle shadow-sm d-flex align-items-center justify-content-center hover-scale" style={{ width: 40, height: 40 }} onClick={() => onEdit(p)} title="Edit">
-                            <i className="bi bi-pencil-fill text-dark"></i>
+                        <div className="position-absolute top-0 end-0 m-2 d-flex flex-column gap-1">
+                          <button
+                            type="button"
+                            className="btn btn-white btn-sm rounded-circle shadow-sm border"
+                            style={{ width: '32px', height: '32px' }}
+                            onClick={() => onEdit(p)}
+                          >
+                            <i className="bi bi-pencil-fill text-primary" style={{ fontSize: '12px' }}></i>
                           </button>
-                          <button className="btn btn-danger rounded-circle shadow-sm d-flex align-items-center justify-content-center hover-scale" style={{ width: 40, height: 40 }} onClick={() => onDelete(p.id)} title="Delete">
-                            <i className="bi bi-trash3-fill text-white"></i>
+                          <button
+                            type="button"
+                            className="btn btn-white btn-sm rounded-circle shadow-sm border"
+                            style={{ width: '32px', height: '32px' }}
+                            onClick={() => onDelete(p.id)}
+                          >
+                            <i className="bi bi-trash3-fill text-danger" style={{ fontSize: '12px' }}></i>
                           </button>
                         </div>
-                        {/* Badges */}
-                        <div className="position-absolute top-0 start-0 p-2">
-                          <span className="badge bg-white text-dark shadow-sm fw-bold border" style={{ fontSize: '0.65rem', backdropFilter: 'blur(4px)', background: 'rgba(255,255,255,0.9)' }}>
+                        <div className="position-absolute top-0 start-0 m-2">
+                          <span className="badge bg-white text-dark shadow-sm border fw-bold" style={{ fontSize: '10px' }}>
                             {p.category}
                           </span>
                         </div>
-                        {p.variants && p.variants.length > 0 && (
-                          <div className="position-absolute bottom-0 end-0 p-2">
-                            <span className="badge bg-dark convex-shadow text-white border border-white border-opacity-25" style={{ fontSize: '0.65rem' }}>
-                              {p.variants.length} Sizes
-                            </span>
-                          </div>
-                        )}
                       </div>
-
-                      <div className="card-body p-3 d-flex flex-column">
-                        <h6 className="fw-extrabold text-dark mb-1 text-truncate tracking-tight" title={p.name}>{p.name}</h6>
-                        <div className="d-flex align-items-center justify-content-between mt-auto pt-2 border-top border-light">
-                          <div className="d-flex flex-column">
-                            <span className="smallest text-muted text-uppercase fw-bold opacity-75">Price</span>
-                            <span className="fw-bold text-primary">₹{p.price}</span>
-                          </div>
-                          <div className="d-flex flex-column text-end">
-                            <span className="smallest text-muted text-uppercase fw-bold opacity-75">ID</span>
-                            <span className="font-monospace smallest text-dark bg-light px-1 rounded">{p.id}</span>
+                      <div className="card-body p-3">
+                        <div className="d-flex justify-content-between align-items-start mb-2">
+                          <h6 className="fw-bold text-dark mb-0 text-truncate pe-2" title={p.name}>{p.name}</h6>
+                          <div className="text-end">
+                            <span className="d-block fw-extrabold text-primary" style={{ fontSize: '14px' }}>₹{p.price}</span>
+                            <span className="smallest text-muted font-monospace" style={{ fontSize: '10px' }}>{p.id}</span>
                           </div>
                         </div>
+                        {p.variants && p.variants.length > 0 && (
+                          <div className="d-flex align-items-center gap-1 mt-2">
+                            <i className="bi bi-layers text-muted smallest"></i>
+                            <span className="smallest text-muted fw-bold">{p.variants.length} Variants</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1423,7 +1604,7 @@ function OwnerApp() {
                       <i className="bi bi-box-seam display-1 text-light mb-3"></i>
                       <h4 className="fw-bold text-muted">Zero Inventory</h4>
                       <p className="text-muted small">Ready to start selling? Add your first product.</p>
-                      <button className="btn btn-primary rounded-pill px-4 mt-2 fw-bold" onClick={() => { setForm(emptyProduct); setShowProductForm(true); }}>Add Product</button>
+                      <button type="button" className="btn btn-primary rounded-pill px-4 mt-2 fw-bold" onClick={() => { setForm(emptyProduct); setShowProductForm(true); }}>Add Product</button>
                     </div>
                   </div>
                 )}
@@ -1457,26 +1638,16 @@ function OwnerApp() {
                 onDeleteOrder={onDeleteOrder}
                 onToggleDispatch={onToggleDispatch}
                 onTogglePayment={onTogglePayment}
+                onToggleDelivered={onToggleDelivered}
                 onPreview={setPreviewImg}
-                onTracking={setTrackingOrder}
               />
             </>
-          )}
-
-          {trackingOrder && (
-            <TrackingModal
-              order={trackingOrder}
-              onClose={() => setTrackingOrder(null)}
-              onUpdate={(updated) => {
-                setOrders(prev => prev.map(o => o.id === updated.id ? updated : o));
-                setStatus('Tracking updated successfully');
-              }}
-            />
           )}
 
           {tab === 'coupons' && <CouponsPanel coupons={coupons} setCoupons={setCoupons} products={products} />}
           {tab === 'reports' && <ReportsPanel range={range} setRange={setRange} data={report} onDownload={downloadPdf} productData={productSales} reportUrl={settings.reportUrl} />}
           {tab === 'settings' && <SettingsPanel settings={settings} setSettings={setSettings} onSave={onSaveSettings} saving={savingSettings} />}
+          {tab === 'teams' && <TeamsPanel admins={admins} setAdmins={setAdmins} />}
         </div>
       </main>
 

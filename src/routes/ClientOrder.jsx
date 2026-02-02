@@ -261,9 +261,9 @@ export default function ClientOrder() {
       </div>
 
 
-      <div className="text-center mt-5 mb-5">
-        <Link to="/" className="btn btn-primary btn-lg rounded-pill px-5 fw-bold shadow-sm transition-all hover-grow">
-          <i className="bi bi-bag-plus-fill me-2"></i> Continue Shopping
+      <div className="text-center mt-4 mb-5 px-3">
+        <Link to="/" className="btn btn-primary btn-lg rounded-pill px-4 px-md-5 py-2 py-md-3 fw-bold shadow-sm d-inline-flex align-items-center justify-content-center gap-2 transition-all hover-grow w-100 w-md-auto" style={{ fontSize: 'clamp(14px, 4vw, 18px)' }}>
+          <i className="bi bi-bag-plus-fill fs-5"></i> <span>Continue Shopping</span>
         </Link>
         <p className="text-muted small mt-4">
           Need help? WhatsApp us at <strong>+{settings.whatsappNumber || '91 6381830479'}</strong>

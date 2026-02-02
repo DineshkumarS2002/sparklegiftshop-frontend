@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { clientGetOrder, API_BASE_URL, getSocketURL } from '../api/clientApi';
+import { clientGetOrder, clientTrackOrderPublic, clientFetchSettings, API_BASE_URL, getSocketURL } from '../api/clientApi';
 import { io } from 'socket.io-client';
 
 export default function OrderDetails() {
     const { invoiceId } = useParams();
     const [order, setOrder] = useState(null);
+    const [settings, setSettings] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -13,19 +14,47 @@ export default function OrderDetails() {
         let socket;
         (async () => {
             try {
-                const data = await clientGetOrder(invoiceId);
-                setOrder(data);
+                // Parallel load settings
+                const settingsPromise = clientFetchSettings();
+                setSettings(await settingsPromise);
 
-                // Initialize Socket
-                socket = io(getSocketURL());
-                socket.emit('join_order', data.id);
+                const token = localStorage.getItem('sparkle_token');
+                let orderData;
 
-                socket.on('tracking_update', (updatedOrder) => {
-                    setOrder(updatedOrder);
-                });
+                try {
+                    // Initialize Socket for everyone
+                    socket = io(getSocketURL(), { auth: { token } });
+                    socket.emit('join_order', invoiceId);
+                    socket.on('tracking_update', (updated) => {
+                        if (updated.invoiceId === invoiceId) {
+                            setOrder(updated);
+                        }
+                    });
 
+                    if (token) {
+                        // Try private route first
+                        orderData = await clientGetOrder(invoiceId);
+                        setOrder(orderData);
+                    } else {
+                        throw new Error('No token');
+                    }
+                } catch (err) {
+                    // Fallback to Public tracking
+                    const guestPhone = localStorage.getItem('sparkle_track_phone') || '';
+                    if (guestPhone) {
+                        orderData = await clientTrackOrderPublic(invoiceId, guestPhone);
+                        setOrder(orderData);
+                    } else {
+                        throw err; // Re-throw if no phone available to try public track
+                    }
+                }
             } catch (err) {
-                setError('Order not found');
+                console.error(err);
+                if (err.response?.status === 401 || err.response?.status === 403) {
+                    setError('Please enter your registered phone number on the track page to view this order.');
+                } else {
+                    setError('Order not found or you do not have permission to view it.');
+                }
             } finally {
                 setLoading(false);
             }
@@ -47,11 +76,16 @@ export default function OrderDetails() {
     if (error || !order) {
         return (
             <div className="container py-5 text-center">
-                <div className="alert alert-danger">{error || 'Something went wrong'}</div>
-                <Link to="/" className="btn btn-primary mt-3">Back to Home</Link>
+                <div className="alert alert-danger shadow-sm border-0">{error || 'Something went wrong'}</div>
+                <div className="mt-4">
+                    <Link to="/track" className="btn btn-primary rounded-pill px-4 me-2">Try Again</Link>
+                    <Link to="/" className="btn btn-outline-secondary rounded-pill px-4">Back to Shop</Link>
+                </div>
             </div>
         );
     }
+
+    const whatsappNumber = settings?.whatsappNumber || '918667634863';
 
     return (
         <div className="container py-5">
@@ -60,32 +94,32 @@ export default function OrderDetails() {
                     <h2 className="fw-bold mb-1">Order Details</h2>
                     <p className="text-muted mb-0">Invoice #{order.invoiceId}</p>
                 </div>
-                <Link to="/track" className="btn btn-outline-secondary btn-sm">
+                <Link to="/track" className="btn btn-outline-secondary btn-sm rounded-pill px-3">
                     <i className="bi bi-arrow-left me-1"></i> Back
                 </Link>
             </div>
 
-            <div className="card border-0 shadow-sm mb-4">
+            <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: '16px' }}>
                 <div className="card-body p-4">
                     <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom">
                         <div>
-                            <span className="text-muted small text-uppercase d-block">Status</span>
-                            <span className={`badge rounded-pill px-3 py-2 mt-1 ${order.dispatched ? 'bg-success' : (order.paymentMethod === 'cod' || order.isPaid || order.paymentScreenshot) ? 'bg-primary' : 'bg-warning text-dark'}`}>
-                                {order.dispatched ? 'DISPATCHED' : (order.paymentMethod === 'cod' || order.isPaid || order.paymentScreenshot) ? 'CONFIRMED' : 'WAITING FOR PAYMENT'}
+                            <span className="text-muted small text-uppercase d-block fw-bold">Status</span>
+                            <span className={`badge rounded-pill px-3 py-2 mt-1 ${order.delivered ? 'bg-success' : order.dispatched ? 'bg-info' : (order.paymentMethod === 'cod' || order.isPaid || order.paymentScreenshot) ? 'bg-primary' : 'bg-warning text-dark'}`}>
+                                {order.delivered ? 'DELIVERED' : order.dispatched ? 'OUT FOR DELIVERY' : (order.paymentMethod === 'cod' || order.isPaid || order.paymentScreenshot) ? 'CONFIRMED' : 'WAITING FOR PAYMENT'}
                             </span>
                         </div>
                         <div className="text-end">
-                            <span className="text-muted small text-uppercase d-block">Order Date</span>
+                            <span className="text-muted small text-uppercase d-block fw-bold">Order Date</span>
                             <span className="fw-medium">{new Date(order.createdAt).toLocaleString()}</span>
                         </div>
                     </div>
 
                     <div className="mb-4">
                         <h6 className="text-uppercase text-muted small fw-bold mb-3">Items Ordered</h6>
-                        {order.items.map((item) => (
-                            <div key={item.productId} className="d-flex justify-content-between align-items-center mb-3">
+                        {order.items.map((item, idx) => (
+                            <div key={`${item.productId}-${idx}`} className="d-flex justify-content-between align-items-center mb-3">
                                 <div className="d-flex align-items-center">
-                                    <div className="bg-light rounded p-2 me-3 text-center" style={{ width: '50px', height: '50px' }}>
+                                    <div className="bg-light rounded p-2 me-3 text-center border" style={{ width: '50px', height: '50px' }}>
                                         {item.product?.image ? (
                                             <img src={item.product?.image} alt="" className="w-100 h-100 object-fit-cover rounded" />
                                         ) : (
@@ -93,19 +127,19 @@ export default function OrderDetails() {
                                         )}
                                     </div>
                                     <div>
-                                        <h6 className="mb-0 fw-semibold">{item.product?.name}</h6>
-                                        <small className="text-muted">{item.product?.category}</small>
+                                        <h6 className="mb-0 fw-semibold">{item.product?.name || 'Gift Item'}</h6>
+                                        <small className="text-muted">{item.variantSize ? `Size: ${item.variantSize}` : item.product?.category}</small>
                                     </div>
                                 </div>
                                 <div className="text-end">
-                                    <div className="fw-bold">₹{item.lineTotal?.toFixed(2)}</div>
+                                    <div className="fw-bold text-dark">₹{item.lineTotal?.toFixed(2)}</div>
                                     <small className="text-muted">Qty: {item.quantity}</small>
                                 </div>
                             </div>
                         ))}
                     </div>
 
-                    <div className="bg-light p-3 rounded mb-4">
+                    <div className="bg-light p-3 rounded-4 mb-4">
                         <div className="d-flex justify-content-between mb-2">
                             <span className="text-muted">Subtotal</span>
                             <span className="fw-medium">₹{order.subtotal?.toFixed(2)}</span>
@@ -121,60 +155,69 @@ export default function OrderDetails() {
                             <span>{order.deliveryFee > 0 ? `₹${order.deliveryFee.toFixed(2)}` : 'Free'}</span>
                         </div>
                         <div className="d-flex justify-content-between pt-2 border-top">
-                            <span className="fw-bold fs-5">Total</span>
+                            <span className="fw-bold fs-5">Total Amount</span>
                             <span className="fw-bold fs-5 text-primary">₹{order.total?.toFixed(2)}</span>
                         </div>
                     </div>
 
                     {/* Live Tracking Timeline */}
                     <div className="border-top pt-4">
-                        <h6 className="text-uppercase text-muted small fw-bold mb-4">Live Tracking Updates</h6>
-                        <div className="tracking-timeline">
+                        <div className="d-flex justify-content-between align-items-center mb-4">
+                            <h6 className="text-uppercase text-muted small fw-bold mb-0">Order Journey</h6>
                             {order.trackingId && (
-                                <div className="mb-4 p-3 bg-primary bg-opacity-10 rounded border border-primary border-opacity-10">
-                                    <div className="d-flex align-items-center">
-                                        <i className="bi bi-box-seam fs-4 me-3 text-primary"></i>
-                                        <div>
-                                            <div className="fw-bold text-primary">{order.courierPartner || 'Shipping Partner Assigned'}</div>
-                                            <div className="small text-muted">Tracking ID: <strong>{order.trackingId}</strong></div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <span className="badge bg-light text-primary border px-2 py-1" style={{ fontSize: '10px' }}>
+                                    {order.courierPartner}: {order.trackingId}
+                                </span>
                             )}
+                        </div>
 
-                            <div className="ms-3 border-start ps-4 position-relative">
-                                {/* Current Status Based on Schema */}
-                                {order.trackingEvents && order.trackingEvents.length > 0 ? (
-                                    order.trackingEvents.map((event, idx) => (
-                                        <div key={idx} className="mb-4 position-relative">
-                                            <div className="position-absolute translate-middle-x" style={{ left: '-25px', top: '0' }}>
-                                                <div className="rounded-circle bg-primary" style={{ width: '12px', height: '12px' }}></div>
-                                            </div>
-                                            <div className="fw-bold small">{event.message}</div>
-                                            {event.location && <div className="smallest text-muted"><i className="bi bi-geo-alt me-1"></i>{event.location}</div>}
-                                            <div className="smallest text-muted opacity-75">{new Date(event.updatedAt).toLocaleString()}</div>
+                        <div className="tracking-timeline-container ps-2">
+                            {/* Support Chat Card */}
+                            <div className="card border-0 bg-success bg-opacity-10 mb-4 rounded-4 shadow-none">
+                                <div className="card-body p-3 d-flex align-items-center justify-content-between">
+                                    <div className="d-flex align-items-center gap-3">
+                                        <div className="bg-success text-white rounded-circle p-2 d-flex align-items-center justify-content-center shadow-sm" style={{ width: '40px', height: '40px' }}>
+                                            <i className="bi bi-whatsapp fs-5"></i>
                                         </div>
-                                    ))
-                                ) : (
-                                    <div className="mb-4 position-relative">
-                                        <div className="position-absolute translate-middle-x" style={{ left: '-25px', top: '0' }}>
-                                            <div className="rounded-circle bg-secondary" style={{ width: '12px', height: '12px' }}></div>
+                                        <div>
+                                            <div className="fw-bold small">Need help?</div>
+                                            <div className="smallest text-muted">Chat with us on WhatsApp</div>
                                         </div>
-                                        <div className="fw-bold small">Order Placed</div>
-                                        <div className="smallest text-muted">We have received your order.</div>
-                                        <div className="smallest text-muted opacity-75">{new Date(order.createdAt).toLocaleString()}</div>
                                     </div>
-                                )}
+                                    <a
+                                        href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hi, I have a query regarding my Order #${order.invoiceId}`)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="btn btn-success btn-sm rounded-pill px-3 fw-bold shadow-sm"
+                                    >
+                                        Chat Now
+                                    </a>
+                                </div>
+                            </div>
 
-                                {order.dispatched && !order.trackingEvents?.length && (
-                                    <div className="mb-4 position-relative">
+                            <div className="ms-2 border-start ps-4 position-relative" style={{ borderColor: '#e2e8f0' }}>
+                                {/* Tracking events - newest at top */}
+                                {[...(order.trackingEvents || [])].reverse().map((event, idx) => (
+                                    <div key={`event-${idx}`} className="mb-4 position-relative">
                                         <div className="position-absolute translate-middle-x" style={{ left: '-25px', top: '0' }}>
-                                            <div className="rounded-circle bg-success" style={{ width: '12px', height: '12px' }}></div>
+                                            <div className={`rounded-circle ${idx === 0 ? 'bg-primary shadow-sm' : 'bg-secondary opacity-50'}`}
+                                                style={{ width: idx === 0 ? '14px' : '10px', height: idx === 0 ? '14px' : '10px', marginTop: '4px', border: '2px solid white' }}></div>
                                         </div>
-                                        <div className="fw-bold small">Order Dispatched</div>
-                                        <div className="smallest text-muted">Package has been handed over to courier.</div>
+                                        <div className={`fw-bold small ${idx === 0 ? 'text-primary' : 'text-dark'}`}>{event.message}</div>
+                                        {event.location && <div className="smallest text-muted"><i className="bi bi-geo-alt me-1"></i>{event.location}</div>}
+                                        <div className="smallest text-muted opacity-75" style={{ fontSize: '10px' }}>{new Date(event.updatedAt).toLocaleString()}</div>
                                     </div>
-                                )}
+                                ))}
+
+                                {/* Initial Order Placed Milestone - Always at bottom */}
+                                <div className="mb-0 position-relative">
+                                    <div className="position-absolute translate-middle-x" style={{ left: '-25px', top: '0' }}>
+                                        <div className="rounded-circle bg-secondary opacity-50" style={{ width: '10px', height: '10px', marginTop: '4px', border: '2px solid white' }}></div>
+                                    </div>
+                                    <div className="fw-bold small text-muted">Order Placed</div>
+                                    <div className="smallest text-muted">We have received your order successfully.</div>
+                                    <div className="smallest text-muted opacity-75" style={{ fontSize: '10px' }}>{new Date(order.createdAt).toLocaleString()}</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -183,30 +226,30 @@ export default function OrderDetails() {
 
             <div className="row g-4">
                 <div className="col-md-6">
-                    <div className="card h-100 border-0 shadow-sm">
-                        <div className="card-body">
+                    <div className="card h-100 border-0 shadow-sm" style={{ borderRadius: '16px' }}>
+                        <div className="card-body p-4">
                             <h6 className="fw-bold text-uppercase text-muted small mb-3">Delivery Address</h6>
-                            <p className="fw-bold mb-1">{order.customerName}</p>
-                            <p className="text-muted mb-0">{order.address}</p>
+                            <p className="fw-bold mb-1 text-dark">{order.customerName}</p>
+                            <p className="text-muted mb-0 small" style={{ lineHeight: '1.6' }}>{order.address}</p>
                         </div>
                     </div>
                 </div>
                 <div className="col-md-6">
-                    <div className="card h-100 border-0 shadow-sm">
-                        <div className="card-body">
+                    <div className="card h-100 border-0 shadow-sm" style={{ borderRadius: '16px' }}>
+                        <div className="card-body p-4">
                             <h6 className="fw-bold text-uppercase text-muted small mb-3">Contact Info</h6>
-                            <p className="mb-2"><i className="bi bi-telephone me-2 text-primary"></i>{order.phone}</p>
-                            <p className="mb-0 text-muted small">Payment via {order.paymentMethod?.toUpperCase()}</p>
+                            <p className="mb-2 fw-medium"><i className="bi bi-telephone me-2 text-primary"></i>{order.phone}</p>
+                            <p className="mb-0 text-muted small">Payment via <span className="fw-bold text-dark">{order.paymentMethod?.toUpperCase()}</span></p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="mt-4 text-center">
+            <div className="mt-5 text-center">
                 <a
                     href={`${API_BASE_URL}/orders/${order.invoiceId}/pdf`}
                     download
-                    className="btn btn-outline-primary rounded-pill px-4"
+                    className="btn btn-outline-primary rounded-pill px-4 fw-bold shadow-sm"
                 >
                     <i className="bi bi-download me-2"></i> Download Invoice
                 </a>

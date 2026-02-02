@@ -12,6 +12,7 @@
 body {
   background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* Glassmorphism Card Override */
@@ -68,20 +69,18 @@ body {
   top: 1rem;
 }
 
-/* Smooth transitions */
+/* Transitions disabled */
 .btn,
 .card {
-  transition: all 0.2s ease-in-out;
+  transition: none !important;
 }
 
-/* Responsive Status Toast */
 .status-toast {
   position: fixed;
   top: 1rem;
   right: 1rem;
   z-index: 1050;
   min-width: 300px;
-  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes slideIn {
@@ -148,23 +147,9 @@ body {
   color: #d946ef !important;
 }
 
-/* Animations */
+/* Animations removed */
 .animation-pulse {
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.02);
-  }
-
-  100% {
-    transform: scale(1);
-  }
+  animation: none !important;
 }
 
 /* Product Card Improvements */
@@ -196,33 +181,10 @@ body {
   background-color: #10b981;
   border-radius: 50%;
   margin-right: 6px;
-  animation: live-blink 1.5s infinite;
-}
-
-@keyframes live-blink {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 0.4;
-    transform: scale(1.2);
-  }
-
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
 }
 
 .product-card {
-  transition: box-shadow 0.3s ease;
   overflow: hidden;
-}
-
-.product-card:hover {
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1) !important;
 }
 
 .product-image {
@@ -241,21 +203,8 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  animation: slide-in-fade 0.5s ease-out;
   max-width: 280px;
   border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-@keyframes slide-in-fade {
-  from {
-    transform: translateX(-30px);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
 }
 
 .backdrop-blur {
@@ -297,7 +246,6 @@ body {
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  transition: all 0.3s ease;
 }
 
 .whatsapp-float:hover {
@@ -382,4 +330,40 @@ body {
 
 .bg-gradient-opacity {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
-}.tracking-timeline { position: relative; } .smallest { font-size: 0.7rem; } .smallest.text-muted { font-size: 0.65rem; }
+}
+
+.tracking-timeline {
+  position: relative;
+}
+
+.smallest {
+  font-size: 0.7rem;
+}
+
+.smallest.text-muted {
+  font-size: 0.65rem;
+}
+
+.offcanvas {
+  transition: transform 0.3s ease-in-out, visibility 0.3s ease-in-out !important;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(15px);
+  border-left: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.offcanvas-backdrop {
+  transition: opacity 0.3s ease;
+}
+
+@media (max-width: 576px) {
+  .offcanvas {
+    width: 85% !important;
+    /* Keep 15% of home page visible on mobile */
+  }
+}
+
+@media (min-width: 577px) {
+  .offcanvas {
+    width: 400px !important;
+  }
+}

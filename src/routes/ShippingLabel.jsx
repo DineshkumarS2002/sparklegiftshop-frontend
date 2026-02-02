@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { clientGetOrder } from '../api/clientApi';
+import { ownerGetOrder } from '../api/ownerApi';
 
 export default function ShippingLabel() {
     const { invoiceId } = useParams();
@@ -10,11 +11,16 @@ export default function ShippingLabel() {
     useEffect(() => {
         (async () => {
             try {
-                const o = await clientGetOrder(invoiceId);
+                const userString = localStorage.getItem('sparkle_user');
+                const user = userString ? JSON.parse(userString) : {};
+                const isAdmin = user.role === 'admin';
+
+                const o = isAdmin ? await ownerGetOrder(invoiceId) : await clientGetOrder(invoiceId);
                 setOrder(o);
                 // Prompt print immediately
                 setTimeout(() => window.print(), 500);
-            } catch {
+            } catch (err) {
+                console.error(err);
                 setStatus('Order not found');
             }
         })();
@@ -27,6 +33,7 @@ export default function ShippingLabel() {
     return (
         <div className="label-container" style={{ width: '4in', margin: '0 auto', background: '#fff', border: '2px solid #000', padding: '15px', fontFamily: 'sans-serif' }}>
             <style>{`
+        @page { size: auto; margin: 0mm; }
         @media print {
           body * { visibility: hidden; }
           .label-container, .label-container * { visibility: visible; }
@@ -72,7 +79,7 @@ export default function ShippingLabel() {
                                 <span style={{ fontWeight: 'bold' }}>{it.quantity} x </span>
                                 <span style={{ fontWeight: 'bold' }}>{it.product?.name || `Product ${it.productId}`}</span>
                             </div>
-                            <span style={{ fontWeight: 'bold' }}>₹{it.lineTotal?.toFixed(0)}</span>
+
                         </div>
                     ))}
                 </div>
@@ -90,10 +97,7 @@ export default function ShippingLabel() {
             </div>
 
             <div style={{ textAlign: 'center', marginTop: '15px', borderTop: '1px solid #eee', paddingTop: '10px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-                    <span style={{ fontSize: '12px', color: '#000', fontWeight: 'bold' }}>Total Amount:</span>
-                    <span style={{ fontSize: '20px', fontWeight: 'bold' }}>₹{order.total?.toFixed(2)}</span>
-                </div>
+
                 <p style={{ margin: '5px 0 0', fontSize: '11px', color: '#000', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold' }}>Fragile - Handle With Care</p>
             </div>
         </div>
