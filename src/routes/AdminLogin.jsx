@@ -53,10 +53,10 @@ export default function AdminLogin() {
 
                     <form onSubmit={onSubmit}>
                         <div className="mb-3 text-start">
-                            <label className="smallest text-muted text-uppercase fw-bold mb-1 ms-1">Admin Email</label>
+                            <label className="form-label">Admin Email</label>
                             <input
                                 type="email"
-                                className="form-control rounded-pill px-3 shadow-none border"
+                                className="form-control"
                                 placeholder="admin@sparkle.com"
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
@@ -64,18 +64,18 @@ export default function AdminLogin() {
                             />
                         </div>
                         <div className="mb-4 text-start position-relative">
-                            <label className="smallest text-muted text-uppercase fw-bold mb-1 ms-1">Password</label>
-                            <div className="input-group">
+                            <label className="form-label">Password</label>
+                            <div className="premium-input-group">
                                 <input
                                     type={showPassword ? "text" : "password"}
-                                    className="form-control rounded-start-pill border-end-0 px-3 shadow-none border"
+                                    className="form-control"
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
                                     required
                                 />
                                 <button
-                                    className="btn border border-start-0 rounded-end-pill px-3 d-flex align-items-center bg-white text-muted"
+                                    className="btn"
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
                                 >
@@ -84,7 +84,7 @@ export default function AdminLogin() {
                             </div>
                         </div>
                         {/* The following elements are added as per instruction, though typically logout is on a dashboard, not login page */}
-                        <button type="submit" className="btn btn-dark rounded-pill w-100 py-2 fw-bold shadow-sm" disabled={loading}>
+                        <button type="submit" className="btn btn-primary rounded-pill w-100 py-2 fw-bold shadow-sm" disabled={loading}>
                             {loading ? 'Authenticating...' : 'Login to Dashboard'}
                         </button>
                     </form>

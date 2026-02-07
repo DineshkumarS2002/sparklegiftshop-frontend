@@ -54,10 +54,10 @@ export default function Login() {
 
                     <form onSubmit={onSubmit}>
                         <div className="mb-3 text-start">
-                            <label className="smallest text-muted text-uppercase fw-bold mb-1 ms-1">Email Address</label>
+                            <label className="form-label">Email Address</label>
                             <input
                                 type="email"
-                                className="form-control rounded-pill px-3 shadow-none"
+                                className="form-control"
                                 placeholder="name@example.com"
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
@@ -65,23 +65,18 @@ export default function Login() {
                             />
                         </div>
                         <div className="mb-4 text-start position-relative">
-                            <label className="smallest text-muted text-uppercase fw-bold mb-1 ms-1">Password</label>
-                            <div
-                                className={`d-flex align-items-center border rounded-pill bg-white px-2 transition-all ${passwordFocus ? 'border-primary' : ''}`}
-                                style={passwordFocus ? { boxShadow: '0 0 0 0.25rem rgba(13, 110, 253, 0.25)' } : {}}
-                            >
+                            <label className="form-label">Password</label>
+                            <div className="premium-input-group">
                                 <input
                                     type={showPassword ? "text" : "password"}
-                                    className="form-control border-0 shadow-none bg-transparent"
+                                    className="form-control"
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
-                                    onFocus={() => setPasswordFocus(true)}
-                                    onBlur={() => setPasswordFocus(false)}
                                     required
                                 />
                                 <button
-                                    className="btn border-0 p-2 d-flex align-items-center text-muted"
+                                    className="btn"
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
                                 >
@@ -93,6 +88,23 @@ export default function Login() {
                             {loading ? 'Signing in...' : 'Sign In'}
                         </button>
                     </form>
+
+                    <div className="mt-3">
+                        <button
+                            type="button"
+                            className="btn btn-link text-decoration-none small text-muted p-0 opacity-75 hover-opacity-100"
+                            onClick={() => {
+                                const emailInput = prompt("Enter your registered Email ID:");
+                                if (emailInput) {
+                                    const msg = `Hi Sparkle Gift Shop, I forgot my account password. Here are my details:\n\nEmail: ${emailInput}\n\nPlease help me reset it.`;
+                                    const whatsapp = '916381830479';
+                                    window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
+                                }
+                            }}
+                        >
+                            <i className="bi bi-question-circle me-1"></i> Forgot Password?
+                        </button>
+                    </div>
 
 
                     <div className="mt-2 small">

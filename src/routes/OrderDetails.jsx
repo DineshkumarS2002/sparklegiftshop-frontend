@@ -116,27 +116,59 @@ export default function OrderDetails() {
 
                     <div className="mb-4">
                         <h6 className="text-uppercase text-muted small fw-bold mb-3">Items Ordered</h6>
-                        {order.items.map((item, idx) => (
-                            <div key={`${item.productId}-${idx}`} className="d-flex justify-content-between align-items-center mb-3">
-                                <div className="d-flex align-items-center">
-                                    <div className="bg-light rounded p-2 me-3 text-center border" style={{ width: '50px', height: '50px' }}>
-                                        {item.product?.image ? (
-                                            <img src={item.product?.image} alt="" className="w-100 h-100 object-fit-cover rounded" />
-                                        ) : (
-                                            <i className="bi bi-gift text-secondary"></i>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <h6 className="mb-0 fw-semibold">{item.product?.name || 'Gift Item'}</h6>
-                                        <small className="text-muted">{item.variantSize ? `Size: ${item.variantSize}` : item.product?.category}</small>
+                        {order.items.map((item, idx) => {
+                            // Logic to find specific variant image if available
+                            let displayImg = item.product?.image;
+                            if (item.product?.variants?.length > 0) {
+                                const v = item.product.variants.find(v =>
+                                    (v.size == item.variantSize || (!v.size && !item.variantSize)) &&
+                                    (v.color == item.variantColor || (!v.color && !item.variantColor))
+                                );
+                                if (v && v.image) displayImg = v.image;
+                            }
+
+                            return (
+                                <div className="card border shadow-sm mb-2 p-2 rounded-3" key={`${item.productId}-${idx}`}>
+                                    <div className="d-flex gap-3 align-items-center">
+                                        {/* Image */}
+                                        <div className="flex-shrink-0" style={{ width: '60px', height: '60px' }}>
+                                            <img src={displayImg || 'https://via.placeholder.com/60'} alt="" className="w-100 h-100 object-fit-cover rounded-3" />
+                                        </div>
+
+                                        {/* Content */}
+                                        <div className="flex-grow-1 min-w-0">
+                                            <h6 className="mb-1 text-truncate fw-bold text-dark" style={{ fontSize: '14px' }}>
+                                                {item.product?.name || 'Gift Item'}
+                                            </h6>
+
+                                            {/* Variants */}
+                                            <div className="d-flex align-items-center gap-2 mb-1">
+                                                {item.variantSize && (
+                                                    <span className="badge bg-secondary bg-opacity-10 text-dark border px-2 py-1" style={{ fontSize: '10px', borderRadius: '6px' }}>
+                                                        {item.variantSize}
+                                                    </span>
+                                                )}
+                                                {item.variantColor && (
+                                                    <span
+                                                        className="border rounded-circle d-inline-block"
+                                                        style={{ width: '18px', height: '18px', backgroundColor: item.variantColor, flexShrink: 0 }}
+                                                    ></span>
+                                                )}
+                                            </div>
+
+                                            <div className="text-muted fw-medium" style={{ fontSize: '13px' }}>
+                                                ₹{item.variantPrice || item.product?.price} × {item.quantity}
+                                            </div>
+                                        </div>
+
+                                        {/* Total */}
+                                        <div className="fw-bold text-dark text-end" style={{ fontSize: '15px' }}>
+                                            ₹{item.lineTotal?.toFixed(2)}
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="text-end">
-                                    <div className="fw-bold text-dark">₹{item.lineTotal?.toFixed(2)}</div>
-                                    <small className="text-muted">Qty: {item.quantity}</small>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
                     <div className="bg-light p-3 rounded-4 mb-4">

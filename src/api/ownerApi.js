@@ -26,8 +26,10 @@ api.interceptors.request.use(config => {
 export const adminLogin = (email, password) => api.post('/auth/admin/login', { email, password }).then(r => r.data);
 export const adminSignup = (payload) => api.post('/auth/admin/signup', payload).then(r => r.data);
 export const adminFetchAdmins = () => api.get('/admin/users').then(r => r.data);
+export const adminFetchCustomers = () => api.get('/admin/customers').then(r => r.data);
 export const adminCreateAdmin = (payload) => api.post('/admin/create-admin', payload).then(r => r.data);
 export const adminDeleteAdmin = (id) => api.delete(`/admin/users/${id}`);
+export const adminGenerateCustomerResetToken = (id) => api.post(`/admin/customers/${id}/reset-token`).then(r => r.data);
 export const adminForgotPassword = (email) => api.post('/auth/admin/forgot-password', { email }).then(r => r.data);
 export const adminResetPassword = (payload) => api.post('/auth/admin/reset-password', payload).then(r => r.data);
 

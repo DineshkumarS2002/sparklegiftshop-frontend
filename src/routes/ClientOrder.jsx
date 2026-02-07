@@ -37,8 +37,43 @@ export default function ClientOrder() {
   };
 
   const redirectToWhatsApp = (o) => {
-    const itemsList = o.items.map(i => `- ${i.product?.name || `Product ${i.productId}`} x${i.quantity}`).join('\n');
-    const msg = `*--- Sparkle Gift Shop ---*\n\nI have Paid & Uploaded the Screenshot for my order.\n\n*Order Details:*\n----------------\n*Invoice:* ${o.invoiceId}\n*Total Amount: ₹${o.total?.toFixed(2)}*\n\n*Customer Info:*\n----------------\n*Name:* ${o.customerName}\n*Phone:* ${o.phone}\n*Address:* ${o.address || 'N/A'}\n\n*Items:*\n${itemsList}\n\n*Status:* Payment Proof Uploaded ✅\n\nTrack Link: ${window.location.origin}/order-details/${o.invoiceId}`;
+    const itemsList = o.items.map(i => {
+      const details = [i.variantSize, i.variantColor].filter(Boolean).join(' | ');
+      const price = i.variantPrice || i.product?.price || 0;
+      return `- ${i.product?.name || `Product ${i.productId}`}${details ? ` (${details})` : ''} x${i.quantity} = Rs.${i.lineTotal?.toFixed(0) || price * i.quantity}`;
+    }).join('\n');
+
+    const deliveryFee = o.deliveryFee || 0;
+    const deliveryStr = deliveryFee > 0 ? `Rs.${deliveryFee}` : 'FREE';
+
+    const msg = `*PAYMENT COMPLETED!*
+
+*--- Sparkle Gift Shop ---*
+
+*Invoice:* ${o.invoiceId}
+
+*Customer Details:*
+-----------------
+Name: ${o.customerName}
+Phone: ${o.phone}
+Address: ${o.address || 'N/A'}
+
+*Order Items:*
+-----------------
+${itemsList}
+
+*Bill Summary:*
+-----------------
+Subtotal: Rs.${o.subtotal || o.total}
+${o.discount > 0 ? `Discount: -Rs.${o.discount}\n` : ''}Delivery: ${deliveryStr}
+*Total Paid: Rs.${o.total?.toFixed(2)}*
+
+Payment Screenshot Uploaded
+
+Track Order:
+${window.location.origin}/order-details/${o.invoiceId}
+
+Please confirm my order. Thank you!`;
 
     const ownerPhone = settings.whatsappNumber ? settings.whatsappNumber.replace(/\D/g, '') : '916381830479';
     const targetPhone = ownerPhone.length === 10 ? '91' + ownerPhone : ownerPhone;
@@ -121,20 +156,59 @@ export default function ClientOrder() {
             <div className="card-body p-4">
               <h5 className="fw-bold mb-4 border-bottom pb-2">Order Summary</h5>
               <div className="mb-4">
-                {order.items?.map((item, idx) => (
-                  <div key={idx} className="d-flex justify-content-between align-items-center mb-2">
-                    <div className="d-flex align-items-center gap-3">
-                      <div className="bg-light rounded p-1" style={{ width: '40px', height: '40px' }}>
-                        <img src={item.product?.image || 'https://via.placeholder.com/40'} className="w-100 h-100 object-fit-cover rounded" alt="" />
-                      </div>
-                      <div>
-                        <div className="fw-bold small">{item.product?.name || `Product ${item.productId}`}</div>
-                        <div className="text-muted smallest">Qty: {item.quantity} x ₹{item.product?.price}</div>
+                {order.items?.map((item, idx) => {
+                  // Resolve display image
+                  let displayImg = item.product?.image;
+                  if (item.product?.variants?.length > 0) {
+                    const v = item.product.variants.find(v =>
+                      (v.size == item.variantSize || (!v.size && !item.variantSize)) &&
+                      (v.color == item.variantColor || (!v.color && !item.variantColor))
+                    );
+                    if (v && v.image) displayImg = v.image;
+                  }
+
+                  return (
+                    <div key={idx} className="card border shadow-sm mb-2 p-2 rounded-3">
+                      <div className="d-flex gap-3 align-items-center">
+                        {/* Image */}
+                        <div className="flex-shrink-0" style={{ width: '60px', height: '60px' }}>
+                          <img src={displayImg || 'https://via.placeholder.com/60'} alt="" className="w-100 h-100 object-fit-cover rounded-3" />
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-grow-1 min-w-0">
+                          <h6 className="mb-1 text-truncate fw-bold text-dark" style={{ fontSize: '14px' }}>
+                            {item.product?.name || `Product ${item.productId}`}
+                          </h6>
+
+                          {/* Variants */}
+                          <div className="d-flex align-items-center gap-2 mb-1">
+                            {item.variantSize && (
+                              <span className="badge bg-secondary bg-opacity-10 text-dark border px-2 py-1" style={{ fontSize: '10px', borderRadius: '6px' }}>
+                                {item.variantSize}
+                              </span>
+                            )}
+                            {item.variantColor && (
+                              <span
+                                className="border rounded-circle d-inline-block"
+                                style={{ width: '18px', height: '18px', backgroundColor: item.variantColor, flexShrink: 0 }}
+                              ></span>
+                            )}
+                          </div>
+
+                          <div className="text-muted fw-medium" style={{ fontSize: '13px' }}>
+                            Qty: {item.quantity} x ₹{item.variantPrice || item.product?.price}
+                          </div>
+                        </div>
+
+                        {/* Total */}
+                        <div className="fw-bold text-dark text-end" style={{ fontSize: '15px' }}>
+                          ₹{item.lineTotal?.toFixed(2)}
+                        </div>
                       </div>
                     </div>
-                    <div className="fw-bold small">₹{item.lineTotal}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="bg-light p-3 rounded-3 mb-4">

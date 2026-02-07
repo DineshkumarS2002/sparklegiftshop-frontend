@@ -17,10 +17,9 @@ body {
 
 /* Glassmorphism Card Override */
 .card {
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   border-radius: 1rem;
 }
 
@@ -35,16 +34,37 @@ body {
   background: linear-gradient(135deg, #ce3ee3 0%, #a21caf 100%);
 }
 
+.form-label {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+  margin-left: 1rem;
+}
+
 .form-control,
 .form-select {
-  border-radius: 0.5rem;
+  border-radius: 50px;
   border: 1px solid #e2e8f0;
-  padding: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  background-color: #fff;
+  font-weight: 500;
+  color: #1e293b;
 }
 
 .form-control:focus {
   border-color: #d946ef;
-  box-shadow: 0 0 0 3px rgba(217, 70, 239, 0.15);
+  background-color: #fdf4ff;
+  box-shadow: 0 0 0 4px rgba(217, 70, 239, 0.1);
+  outline: none;
+}
+
+.btn {
+  border-radius: 50px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 700;
 }
 
 /* Custom Utilities */
@@ -346,8 +366,7 @@ body {
 
 .offcanvas {
   transition: transform 0.3s ease-in-out, visibility 0.3s ease-in-out !important;
-  background-color: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(15px);
+  background-color: #fff;
   border-left: 1px solid rgba(0, 0, 0, 0.05);
 }
 
@@ -366,4 +385,57 @@ body {
   .offcanvas {
     width: 400px !important;
   }
+}
+
+.premium-input-group {
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 50px;
+  padding: 0 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.premium-input-group:focus-within {
+  border-color: #d946ef;
+  background-color: #fdf4ff;
+  box-shadow: 0 0 0 4px rgba(217, 70, 239, 0.1);
+}
+
+.premium-input-group .form-control {
+  border: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  flex-grow: 1;
+}
+
+.premium-input-group .btn {
+  border: none !important;
+  background: transparent !important;
+  color: #64748b;
+  padding: 0.5rem 1rem;
+  box-shadow: none !important;
+}
+
+.premium-input-group .btn:hover {
+  color: #d946ef;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #d946ef 0%, #c026d3 100%);
+  border: none;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(217, 70, 239, 0.3);
+  text-transform: none;
+  /* Reference image says "Create Account" normal case but bold */
+  letter-spacing: -0.5px;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.h-pill {
+  border-radius: 50px !important;
 }

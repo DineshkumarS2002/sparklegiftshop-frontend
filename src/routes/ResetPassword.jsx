@@ -11,6 +11,8 @@ export default function ResetPassword() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -65,25 +67,43 @@ export default function ResetPassword() {
                         <form onSubmit={onSubmit}>
                             <div className="mb-3">
                                 <label className="smallest text-muted text-uppercase fw-bold mb-1 ms-1">New Password</label>
-                                <input
-                                    type="password"
-                                    className="form-control rounded-pill px-3 shadow-none border"
-                                    placeholder="••••••••"
-                                    value={password}
-                                    onChange={e => setPassword(e.target.value)}
-                                    required
-                                />
+                                <div className="premium-input-group">
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        className="form-control"
+                                        placeholder="••••••••"
+                                        value={password}
+                                        onChange={e => setPassword(e.target.value)}
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        className="btn"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                    >
+                                        <i className={`bi bi-eye${showPassword ? '-slash' : ''}`}></i>
+                                    </button>
+                                </div>
                             </div>
                             <div className="mb-4">
                                 <label className="smallest text-muted text-uppercase fw-bold mb-1 ms-1">Confirm Password</label>
-                                <input
-                                    type="password"
-                                    className="form-control rounded-pill px-3 shadow-none border"
-                                    placeholder="••••••••"
-                                    value={confirmPassword}
-                                    onChange={e => setConfirmPassword(e.target.value)}
-                                    required
-                                />
+                                <div className="premium-input-group">
+                                    <input
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        className="form-control"
+                                        placeholder="••••••••"
+                                        value={confirmPassword}
+                                        onChange={e => setConfirmPassword(e.target.value)}
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        className="btn"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    >
+                                        <i className={`bi bi-eye${showConfirmPassword ? '-slash' : ''}`}></i>
+                                    </button>
+                                </div>
                             </div>
                             <button type="submit" className="btn btn-primary rounded-pill w-100 py-2 fw-bold" disabled={loading}>
                                 {loading ? 'Resetting...' : 'Update Password'}

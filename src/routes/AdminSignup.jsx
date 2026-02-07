@@ -78,10 +78,10 @@ export default function AdminSignup() {
 
                     <form onSubmit={onSubmit}>
                         <div className="mb-3 text-start">
-                            <label className="smallest text-muted text-uppercase fw-bold mb-1 ms-1">Full Name</label>
+                            <label className="form-label">Full Name</label>
                             <input
                                 type="text"
-                                className="form-control rounded-pill px-3 shadow-none border"
+                                className="form-control"
                                 placeholder="Admin Name"
                                 value={form.name}
                                 onChange={e => setForm({ ...form, name: e.target.value })}
@@ -89,10 +89,10 @@ export default function AdminSignup() {
                             />
                         </div>
                         <div className="mb-3 text-start">
-                            <label className="smallest text-muted text-uppercase fw-bold mb-1 ms-1">Email Address</label>
+                            <label className="form-label">Email Address</label>
                             <input
                                 type="email"
-                                className="form-control rounded-pill px-3 shadow-none border"
+                                className="form-control"
                                 placeholder="admin@example.com"
                                 value={form.email}
                                 onChange={e => setForm({ ...form, email: e.target.value })}
@@ -100,11 +100,11 @@ export default function AdminSignup() {
                             />
                         </div>
                         <div className="mb-3 text-start position-relative">
-                            <label className="smallest text-muted text-uppercase fw-bold mb-1 ms-1">Password</label>
-                            <div className="input-group">
+                            <label className="form-label">Password</label>
+                            <div className="premium-input-group">
                                 <input
                                     type={showPassword ? "text" : "password"}
-                                    className="form-control rounded-start-pill border-end-0 px-3 shadow-none border"
+                                    className="form-control"
                                     placeholder="••••••••"
                                     value={form.password}
                                     onChange={e => setForm({ ...form, password: e.target.value })}
@@ -112,7 +112,7 @@ export default function AdminSignup() {
                                     minLength={6}
                                 />
                                 <button
-                                    className="btn border border-start-0 rounded-end-pill px-3 d-flex align-items-center bg-white text-muted"
+                                    className="btn"
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
                                 >
@@ -121,9 +121,9 @@ export default function AdminSignup() {
                             </div>
                         </div>
                         <div className="mb-4 text-start">
-                            <label className="smallest text-muted text-uppercase fw-bold mb-1 ms-1">Access Level</label>
+                            <label className="form-label">Access Level</label>
                             <select
-                                className="form-select rounded-pill px-3 shadow-none border"
+                                className="form-select"
                                 value={form.adminLevel}
                                 onChange={e => setForm({ ...form, adminLevel: e.target.value })}
                             >
@@ -131,7 +131,7 @@ export default function AdminSignup() {
                                 <option value="super_admin">Super Admin</option>
                             </select>
                         </div>
-                        <button type="submit" className="btn btn-dark rounded-pill w-100 py-2 fw-bold shadow-sm" disabled={loading}>
+                        <button type="submit" className="btn btn-primary rounded-pill w-100 py-2 fw-bold shadow-sm" disabled={loading}>
                             {loading ? 'Creating account...' : 'Create Admin Account'}
                         </button>
                     </form>

@@ -18,9 +18,12 @@ import {
   ownerDeleteOrder,
   ownerToggleDispatch,
   ownerTogglePayment,
+  ownerToggleDelivered,
   ownerUpdateOrderTracking,
   API_BASE_URL,
   adminFetchAdmins,
+  adminFetchCustomers,
+  adminGenerateCustomerResetToken,
   adminCreateAdmin,
   adminDeleteAdmin
 } from '../api/ownerApi';
@@ -102,7 +105,7 @@ function ProductForm({ form, setForm, onSubmit, editing, onCancel }) {
             <div className="col-lg-8 border-lg-end pb-3 pb-lg-0">
               <div className="row g-3">
                 <div className="col-12">
-                  <label className="form-label fw-bold text-muted small text-uppercase">Product Name</label>
+                  <label className="form-label">Product Name</label>
                   <input
                     className="form-control form-control-lg"
                     placeholder="e.g. Personalized Magic Mug"
@@ -113,9 +116,9 @@ function ProductForm({ form, setForm, onSubmit, editing, onCancel }) {
                 </div>
 
                 <div className="col-md-6">
-                  <label className="form-label fw-bold text-muted small text-uppercase">Offer Price (₹)</label>
-                  <div className="input-group">
-                    <span className="input-group-text bg-white text-muted">₹</span>
+                  <label className="form-label">Offer Price (₹)</label>
+                  <div className="input-group premium-input-group">
+                    <span className="btn text-muted">₹</span>
                     <input
                       type="number"
                       className="form-control"
@@ -128,9 +131,9 @@ function ProductForm({ form, setForm, onSubmit, editing, onCancel }) {
                 </div>
 
                 <div className="col-md-6">
-                  <label className="form-label fw-bold text-muted small text-uppercase">Actual Price (₹)</label>
-                  <div className="input-group">
-                    <span className="input-group-text bg-white text-muted">₹</span>
+                  <label className="form-label">Actual Price (₹)</label>
+                  <div className="input-group premium-input-group">
+                    <span className="btn text-muted">₹</span>
                     <input
                       type="number"
                       className="form-control"
@@ -139,11 +142,11 @@ function ProductForm({ form, setForm, onSubmit, editing, onCancel }) {
                       onChange={(e) => setForm(f => ({ ...f, originalPrice: e.target.value }))}
                     />
                   </div>
-                  <small className="text-muted smallest">Leave empty if no discount.</small>
+                  <small className="text-muted smallest ms-3">Leave empty if no discount.</small>
                 </div>
 
                 <div className="col-md-6">
-                  <label className="form-label fw-bold text-muted small text-uppercase">Category</label>
+                  <label className="form-label">Category</label>
                   <select
                     className="form-select"
                     value={form.category}
@@ -159,10 +162,11 @@ function ProductForm({ form, setForm, onSubmit, editing, onCancel }) {
                 </div>
 
                 <div className="col-12">
-                  <label className="form-label fw-bold text-muted small text-uppercase">Description</label>
+                  <label className="form-label">Description</label>
                   <textarea
                     className="form-control"
                     rows={5}
+                    style={{ borderRadius: '1.25rem' }}
                     placeholder="Describe the product features, size, and customization options..."
                     value={form.description}
                     onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))}
@@ -333,8 +337,8 @@ function ProductForm({ form, setForm, onSubmit, editing, onCancel }) {
           </div>
 
           <div className="pt-4 mt-4 d-flex flex-column flex-sm-row justify-content-end gap-2 px-1">
-            <button type="button" className="btn btn-light border fw-bold px-4" style={{ borderRadius: '12px', minHeight: '52px' }} onClick={onCancel}>Discard</button>
-            <button type="submit" className="btn btn-dark px-5 fw-bold d-flex align-items-center justify-content-center gap-3 shadow-none border-0" style={{ backgroundColor: '#1c1c1f', color: '#fff', borderRadius: '12px', minHeight: '52px', fontSize: '16px' }}>
+            <button type="button" className="btn btn-light border px-4 h-pill" style={{ minHeight: '52px' }} onClick={onCancel}>Discard</button>
+            <button type="submit" className="btn btn-primary px-5 d-flex align-items-center justify-content-center gap-3 h-pill shadow-lg border-0" style={{ minHeight: '52px', fontSize: '16px' }}>
               <i className="bi bi-check-circle-fill" style={{ fontSize: '18px' }}></i>
               <span>{editing ? 'Save Changes' : 'Publish Product'}</span>
             </button>
@@ -392,13 +396,13 @@ function SettingsPanel({ settings, setSettings, onSave, saving }) {
                     </div>
                   </div>
                   <div className="flex-grow-1">
-                    <label className="form-label fw-bold small text-muted text-uppercase tracking-wider">Store Name</label>
+                    <label className="form-label">Store Name</label>
                     <input
-                      className="form-control form-control-lg fw-bold text-dark bg-light border-0"
+                      className="form-control form-control-lg fw-bold text-dark"
                       value={settings.storeName || 'Sparkle Gift Shop'}
                       onChange={(e) => setSettings(s => ({ ...s, storeName: e.target.value }))}
                     />
-                    <p className="text-muted smallest mt-1 mb-0">This name will appear across your app and invoices.</p>
+                    <p className="text-muted smallest mt-1 mb-0 ms-3">This name will appear across your app and invoices.</p>
                   </div>
                 </div>
               </div>
@@ -413,33 +417,33 @@ function SettingsPanel({ settings, setSettings, onSave, saving }) {
             </h6>
           </div>
           <div className="card-body p-4">
-            <div className="row g-4">
+            <div className="row g-4 text-start">
               <div className="col-md-6">
-                <label className="form-label fw-bold small text-muted text-uppercase tracking-wider">WhatsApp Number</label>
-                <div className="input-group input-group-lg border rounded-3 overflow-hidden">
-                  <span className="input-group-text bg-white border-0 text-success"><i className="bi bi-whatsapp"></i></span>
+                <label className="form-label">WhatsApp Number</label>
+                <div className="input-group input-group-lg premium-input-group">
+                  <span className="btn text-success"><i className="bi bi-whatsapp"></i></span>
                   <input
-                    className="form-control border-0 shadow-none ps-1"
+                    className="form-control"
                     value={settings.whatsappNumber || ''}
                     onChange={(e) => setSettings(s => ({ ...s, whatsappNumber: e.target.value }))}
                     placeholder="919876543210"
                   />
                 </div>
-                <small className="text-muted smallest mt-1 d-block">This number will receive order alerts.</small>
+                <small className="text-muted smallest mt-1 d-block ms-3">This number will receive order alerts.</small>
               </div>
 
               <div className="col-md-6">
-                <label className="form-label fw-bold small text-muted text-uppercase tracking-wider">UPI ID</label>
-                <div className="input-group input-group-lg border rounded-3 overflow-hidden">
-                  <span className="input-group-text bg-white border-0 text-primary"><i className="bi bi-qr-code"></i></span>
+                <label className="form-label">UPI ID</label>
+                <div className="input-group input-group-lg premium-input-group">
+                  <span className="btn text-primary"><i className="bi bi-qr-code"></i></span>
                   <input
-                    className="form-control border-0 shadow-none ps-1"
+                    className="form-control"
                     value={settings.upiId || ''}
                     onChange={(e) => setSettings(s => ({ ...s, upiId: e.target.value }))}
                     placeholder="username@upi"
                   />
                 </div>
-                <small className="text-muted smallest mt-1 d-block">Used for generating payment QR codes.</small>
+                <small className="text-muted smallest mt-1 d-block ms-3">Used for generating payment QR codes.</small>
               </div>
 
               <div className="col-12">
@@ -458,7 +462,7 @@ function SettingsPanel({ settings, setSettings, onSave, saving }) {
         {/* Footer Actions */}
         <div className="d-flex justify-content-end pt-2">
           <button
-            className="btn btn-dark px-5 py-3 rounded-pill fw-bold shadow-lg d-flex align-items-center gap-2"
+            className="btn btn-primary px-5 py-3 shadow-lg d-flex align-items-center gap-2 h-pill"
             onClick={onSave}
             disabled={saving}
             style={{ minWidth: '200px', justifyContent: 'center' }}
@@ -583,7 +587,7 @@ function OrdersList({ orders, onWhatsApp, onDeleteOrder, onToggleDispatch, onTog
                 {/* Customer Info Section */}
                 <div className="mb-3 p-2 bg-light rounded">
                   <div className="d-flex align-items-start gap-2 mb-2">
-                    <div className="bg-primary bg-opacity-10 rounded-circle p-2" style={{ width: '36px', height: '36px' }}>
+                    <div className="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style={{ width: '36px', height: '36px' }}>
                       <i className="bi bi-person-fill text-primary"></i>
                     </div>
                     <div className="flex-grow-1">
@@ -617,27 +621,60 @@ function OrdersList({ orders, onWhatsApp, onDeleteOrder, onToggleDispatch, onTog
                       {o.items.length} {o.items.length === 1 ? 'Item' : 'Items'}
                     </span>
                   </div>
-                  <div className="order-items-scroll" style={{ maxHeight: '180px', overflowY: 'auto', overflowX: 'hidden' }}>
-                    {o.items.map((i, idx) => (
-                      <div key={idx} className="d-flex align-items-center gap-2 mb-2 p-2 bg-light rounded border">
-                        <img
-                          src={i.product?.image || 'https://via.placeholder.com/50'}
-                          alt="Product"
-                          className="rounded shadow-sm"
-                          style={{ width: 50, height: 50, objectFit: 'cover' }}
-                        />
-                        <div className="flex-grow-1" style={{ minWidth: 0 }}>
-                          <div className="fw-bold text-dark" style={{ fontSize: '12px', lineHeight: '1.3' }}>
-                            {i.product?.name || `Product ${i.productId}`}
-                            {i.variantSize && <span className="badge bg-secondary bg-opacity-25 text-dark ms-1" style={{ fontSize: '9px' }}>{i.variantSize}</span>}
-                          </div>
-                          <div className="text-muted" style={{ fontSize: '11px' }}>
-                            ₹{i.variantPrice || i.product?.price} × {i.quantity}
+                  <div className="order-items-scroll" style={{ maxHeight: '250px', overflowY: 'auto', overflowX: 'hidden' }}>
+                    {o.items.map((i, idx) => {
+                      // Resolve display image
+                      let displayImg = i.product?.image;
+                      if (i.product?.variants?.length > 0) {
+                        const v = i.product.variants.find(v =>
+                          (v.size == i.variantSize || (!v.size && !i.variantSize)) &&
+                          (v.color == i.variantColor || (!v.color && !i.variantColor))
+                        );
+                        if (v && v.image) displayImg = v.image;
+                      }
+
+                      return (
+                        <div className="card border shadow-sm mb-2 p-2 rounded-3" key={idx}>
+                          <div className="d-flex gap-3 align-items-center">
+                            {/* Image */}
+                            <div className="flex-shrink-0" style={{ width: '50px', height: '50px' }}>
+                              <img src={displayImg || 'https://via.placeholder.com/50'} alt="" className="w-100 h-100 object-fit-cover rounded-3" />
+                            </div>
+
+                            {/* Content */}
+                            <div className="flex-grow-1 min-w-0">
+                              <h6 className="mb-1 text-truncate fw-bold text-dark" style={{ fontSize: '13px' }}>
+                                {i.product?.name || `Product ${i.productId}`}
+                              </h6>
+
+                              {/* Variants */}
+                              <div className="d-flex align-items-center gap-2 mb-1">
+                                {i.variantSize && (
+                                  <span className="badge bg-secondary bg-opacity-10 text-dark border px-2 py-0" style={{ fontSize: '9px', borderRadius: '4px' }}>
+                                    {i.variantSize}
+                                  </span>
+                                )}
+                                {i.variantColor && (
+                                  <span
+                                    className="border rounded-circle d-inline-block"
+                                    style={{ width: '14px', height: '14px', backgroundColor: i.variantColor, flexShrink: 0 }}
+                                  ></span>
+                                )}
+                              </div>
+
+                              <div className="text-muted fw-medium" style={{ fontSize: '11px' }}>
+                                ₹{i.variantPrice || i.product?.price} × {i.quantity}
+                              </div>
+                            </div>
+
+                            {/* Total */}
+                            <div className="fw-bold text-primary text-end" style={{ fontSize: '13px' }}>
+                              ₹{i.lineTotal?.toFixed(0)}
+                            </div>
                           </div>
                         </div>
-                        <div className="fw-bold text-primary" style={{ fontSize: '13px' }}>₹{i.lineTotal?.toFixed(0)}</div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -922,12 +959,12 @@ function CouponsPanel({ coupons, setCoupons, products }) {
           </div>
           <div className="card-body px-4 pb-4">
             <form onSubmit={onSubmit}>
-              <div className="mb-4">
-                <label className="small fw-bold text-muted text-uppercase mb-2 d-block tracking-wider">Coupon Code</label>
-                <div className="input-group input-group-lg shadow-sm rounded-3 overflow-hidden border">
-                  <span className="input-group-text bg-light border-0"><i className="bi bi-tag-fill text-primary"></i></span>
+              <div className="mb-4 text-start">
+                <label className="form-label">Coupon Code</label>
+                <div className="input-group input-group-lg premium-input-group">
+                  <span className="btn text-primary"><i className="bi bi-tag-fill"></i></span>
                   <input
-                    className="form-control border-0 shadow-none text-uppercase fw-extrabold text-primary"
+                    className="form-control text-uppercase fw-extrabold text-primary"
                     placeholder="E.G. FESTIVE50"
                     value={form.code}
                     onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))}
@@ -937,25 +974,25 @@ function CouponsPanel({ coupons, setCoupons, products }) {
                 </div>
               </div>
 
-              <div className="row g-3 mb-4">
+              <div className="row g-3 mb-4 text-start">
                 <div className="col-6">
-                  <label className="small fw-bold text-muted text-uppercase mb-2 d-block tracking-wider">Type</label>
-                  <select className="form-select border shadow-none" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
+                  <label className="form-label">Type</label>
+                  <select className="form-select" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
                     <option value="percent">Percentage (%)</option>
                     <option value="flat">Fixed (₹)</option>
                   </select>
                 </div>
                 <div className="col-6">
-                  <label className="small fw-bold text-muted text-uppercase mb-2 d-block tracking-wider">Value</label>
-                  <div className="input-group border rounded shadow-none">
-                    <span className="input-group-text bg-white border-0 text-muted px-2">{form.type === 'percent' ? '%' : '₹'}</span>
-                    <input type="number" className="form-control border-0 shadow-none ps-0" placeholder="0" value={form.value} onChange={e => setForm(f => ({ ...f, value: e.target.value }))} required />
+                  <label className="form-label">Value</label>
+                  <div className="input-group premium-input-group">
+                    <span className="btn text-muted px-2">{form.type === 'percent' ? '%' : '₹'}</span>
+                    <input type="number" className="form-control ps-0" placeholder="0" value={form.value} onChange={e => setForm(f => ({ ...f, value: e.target.value }))} required />
                   </div>
                 </div>
               </div>
 
-              <div className="mb-1">
-                <label className="small fw-bold text-muted text-uppercase mb-3 d-block tracking-wider">Target Audience</label>
+              <div className="mb-1 text-start">
+                <label className="form-label">Target Audience</label>
                 <div className="d-flex gap-2 mb-4">
                   <button
                     type="button"
@@ -1106,38 +1143,41 @@ function TeamsPanel({ admins, setAdmins }) {
             <h5 className="fw-bold mb-4">Add New Team Member</h5>
             {error && <div className="alert alert-danger py-2 small">{error}</div>}
             <form onSubmit={onSubmit}>
-              <div className="mb-3">
-                <label className="smallest text-muted text-uppercase fw-bold mb-1">Full Name</label>
+              <div className="mb-4">
+                <label className="form-label">Full Name</label>
                 <input
-                  className="form-control shadow-none border"
+                  className="form-control"
+                  placeholder="e.g. John Doe"
                   value={form.name}
                   onChange={e => setForm({ ...form, name: e.target.value })}
                   required
                 />
               </div>
-              <div className="mb-3">
-                <label className="smallest text-muted text-uppercase fw-bold mb-1">Email Address</label>
+              <div className="mb-4">
+                <label className="form-label">Email Address</label>
                 <input
                   type="email"
-                  className="form-control shadow-none border"
+                  className="form-control"
+                  placeholder="e.g. john@example.com"
                   value={form.email}
                   onChange={e => setForm({ ...form, email: e.target.value })}
                   required
                 />
               </div>
-              <div className="mb-3">
-                <label className="smallest text-muted text-uppercase fw-bold mb-1">Password</label>
-                <div className="input-group">
+              <div className="mb-4">
+                <label className="form-label">Password</label>
+                <div className="premium-input-group">
                   <input
                     type={showPassword ? "text" : "password"}
-                    className="form-control shadow-none border border-end-0"
+                    className="form-control"
+                    placeholder="••••••••"
                     value={form.password}
                     onChange={e => setForm({ ...form, password: e.target.value })}
                     required
                   />
                   <button
                     type="button"
-                    className="btn border border-start-0 bg-white text-muted"
+                    className="btn"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     <i className={`bi bi-eye${showPassword ? '-slash' : ''}`}></i>
@@ -1145,9 +1185,9 @@ function TeamsPanel({ admins, setAdmins }) {
                 </div>
               </div>
               <div className="mb-4">
-                <label className="smallest text-muted text-uppercase fw-bold mb-1">Access Level</label>
+                <label className="form-label">Access Level</label>
                 <select
-                  className="form-select shadow-none border text-capitalize"
+                  className="form-select text-capitalize"
                   value={form.adminLevel}
                   onChange={e => setForm({ ...form, adminLevel: e.target.value })}
                 >
@@ -1155,7 +1195,7 @@ function TeamsPanel({ admins, setAdmins }) {
                   <option value="super_admin">Super Admin</option>
                 </select>
               </div>
-              <button className="btn btn-primary w-100 rounded-pill fw-bold" disabled={loading}>
+              <button className="btn btn-primary w-100 py-3 fw-bold h-pill shadow-lg mt-2" disabled={loading}>
                 {loading ? 'Adding...' : 'Add Team Member'}
               </button>
             </form>
@@ -1212,22 +1252,97 @@ function TeamsPanel({ admins, setAdmins }) {
   );
 }
 
+function CustomersPanel({ customers, setCustomers, setStatus }) {
+  const onReset = async (user) => {
+    if (!window.confirm(`Generate a secure password reset link for ${user.name}? This will be sent via WhatsApp.`)) return;
+
+    try {
+      const { token } = await adminGenerateCustomerResetToken(user._id);
+      const resetLink = `${window.location.origin}/reset-password?token=${token}`;
+
+      const msg = `Hello ${user.name},
+
+We received a request to reset your Sparkle Gift Shop account password.
+
+Please use the link below to set a new password:
+${resetLink}
+
+This link is valid for 24 hours only.
+
+If you did not request this, please ignore this message.
+
+Thank you,
+Sparkle Gift Shop Team`;
+
+      // Find the user's phone number from their orders if possible, or we might need it in user model
+      // For now, if we don't have user phone in model, let's try to get it if they have orders
+      // or just open WhatsApp and let admin pick the contact.
+      // But ideally we want wa.me link. Let's assume user might not have phone in User model yet.
+      // Let's check User model again.
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+      setStatus('Reset link generated!');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to generate reset link');
+    }
+  };
+
+  return (
+    <div className="card shadow-sm border-0 bg-white" style={{ borderRadius: '16px' }}>
+      <div className="card-body p-0">
+        <div className="table-responsive">
+          <table className="table table-hover align-middle mb-0">
+            <thead className="bg-light">
+              <tr>
+                <th className="px-4 py-3">Customer</th>
+                <th className="py-3">Email</th>
+                <th className="py-3 text-center">Status</th>
+                <th className="px-4 py-3 text-end">Reset</th>
+              </tr>
+            </thead>
+            <tbody>
+              {customers && customers.length > 0 ? customers.map(user => (
+                <tr key={user._id}>
+                  <td className="px-4 py-3">
+                    <div className="d-flex align-items-center">
+                      <div className="bg-secondary bg-opacity-10 text-secondary rounded-circle d-flex align-items-center justify-content-center fw-bold me-3" style={{ width: 40, height: 40 }}>
+                        {user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="fw-bold">{user.name}</div>
+                    </div>
+                  </td>
+                  <td className="py-3 text-muted small">{user.email}</td>
+                  <td className="py-3 text-center">
+                    <span className="badge rounded-pill bg-success bg-opacity-10 text-success">Active</span>
+                  </td>
+                  <td className="px-4 py-3 text-end">
+                    <button className="btn btn-sm btn-outline-primary rounded-pill px-3" onClick={() => onReset(user)}>
+                      <i className="bi bi-key me-1"></i> New Password
+                    </button>
+                  </td>
+                </tr>
+              )) : (
+                <tr><td colSpan="4" className="text-center py-4 text-muted">No customers found.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 function OwnerApp() {
-  const [tab, setTab] = useState(() => localStorage.getItem('ownerTab') || 'orders');
-
-  // Save tab to localStorage when it changes
-  useEffect(() => {
-    localStorage.setItem('ownerTab', tab);
-  }, [tab]);
-  const [products, setProducts] = useState([]);
-  const [orders, setOrders] = useState([]);
+  const navigate = useNavigate();
+  const [status, setStatus] = useStatus('');
+  const [products, setProducts] = useState(() => JSON.parse(localStorage.getItem('sparkle_owner_products') || '[]'));
+  const [orders, setOrders] = useState(() => JSON.parse(localStorage.getItem('sparkle_owner_orders') || '[]'));
   const [coupons, setCoupons] = useState([]);
   const [form, setForm] = useState(emptyProduct);
   const [editingId, setEditingId] = useState(null);
   const [admins, setAdmins] = useState([]);
-  const [status, setStatus] = useStatus('');
-  const [settings, setSettings] = useState({ upiQrUrl: '', upiId: '', whatsappNumber: '', logoUrl: '', reportUrl: '', storeName: '' });
+  const [customers, setCustomers] = useState([]);
+  const [settings, setSettings] = useState(() => JSON.parse(localStorage.getItem('sparkle_owner_settings') || '{"upiQrUrl": "", "upiId": "", "whatsappNumber": "", "logoUrl": "", "reportUrl": "", "storeName": ""}'));
   useFavicon(settings.logoUrl);
   useStoreTitle(settings.storeName);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -1236,10 +1351,19 @@ function OwnerApp() {
   const [showProductForm, setShowProductForm] = useState(false);
   const [orderFilterDate, setOrderFilterDate] = useState('');
   const [query, setQuery] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    // If we have products and orders cached, we don't need a full-page loader
+    return !localStorage.getItem('sparkle_owner_products') || !localStorage.getItem('sparkle_owner_orders');
+  });
+  const [tab, setTab] = useState(() => localStorage.getItem('ownerTab') || 'orders');
   const [previewImg, setPreviewImg] = useState(null);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Save tab to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('ownerTab', tab);
+  }, [tab]);
 
   useEffect(() => {
     loadAll();
@@ -1255,30 +1379,68 @@ function OwnerApp() {
   useEffect(() => { if (tab === 'reports') loadReport(range); }, [range, tab]);
 
   const loadAll = async () => {
-    // Quick load from cache for better UX
-    const cached = localStorage.getItem('sparkle_owner_settings');
-    if (cached) setSettings(JSON.parse(cached));
-
-    setLoading(true);
     try {
-      const [p, o, s, c, a] = await Promise.all([
+      // 1. Fetch data for the ACTIVE tab first (Prioritization)
+      if (tab === 'orders') {
+        const o = await ownerFetchOrders();
+        setOrders(o);
+        localStorage.setItem('sparkle_owner_orders', JSON.stringify(o));
+      } else if (tab === 'products') {
+        const p = await ownerFetchProducts();
+        setProducts(p);
+        localStorage.setItem('sparkle_owner_products', JSON.stringify(p));
+      }
+
+      setLoading(false); // UI is now prioritized for the user
+
+      // 2. Fetch all other essential data in parallel
+      const [p, o, s] = await Promise.all([
         ownerFetchProducts(),
         ownerFetchOrders(),
-        ownerFetchSettings(),
-        ownerFetchCoupons(),
-        adminFetchAdmins()
+        ownerFetchSettings()
       ]);
+
       setProducts(p);
+      localStorage.setItem('sparkle_owner_products', JSON.stringify(p));
       setOrders(o);
+      localStorage.setItem('sparkle_owner_orders', JSON.stringify(o));
       if (s) {
         setSettings(s);
         localStorage.setItem('sparkle_owner_settings', JSON.stringify(s));
       }
+
+      // 3. Background fetch secondary data
+      const [c, a, cust] = await Promise.all([
+        ownerFetchCoupons(),
+        adminFetchAdmins(),
+        adminFetchCustomers()
+      ]);
       setCoupons(c);
       setAdmins(a);
+      setCustomers(cust);
+
+      // Check for permission update
+      const currentUserStr = localStorage.getItem('sparkle_user');
+      if (currentUserStr && a) {
+        const currentUser = JSON.parse(currentUserStr);
+        const dbUser = a.find(user => user._id === currentUser.id);
+        if (dbUser && dbUser.adminLevel === 'super_admin' && currentUser.adminLevel !== 'super_admin') {
+          if (window.confirm("Your account has been promoted to Super Admin!\n\nPlease log in again to activate your new privileges.")) {
+            localStorage.removeItem('sparkle_token');
+            localStorage.removeItem('sparkle_user');
+            window.location.href = '/admin/login';
+            return;
+          }
+        }
+      }
     } catch (err) {
       console.error(err);
-      setStatus('Failed to load dashboard data');
+      if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+        localStorage.removeItem('sparkle_token');
+        navigate('/admin/login');
+      } else {
+        setStatus('Failed to load dashboard data');
+      }
     } finally {
       setLoading(false);
     }
@@ -1291,6 +1453,10 @@ function OwnerApp() {
       setOrders(o);
     } catch (err) {
       console.error("BG Refresh failed", err);
+      if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+        localStorage.removeItem('sparkle_token');
+        navigate('/admin/login');
+      }
     } finally {
       setIsRefreshing(false);
     }
@@ -1399,7 +1565,7 @@ function OwnerApp() {
     if (!window.confirm("Are you sure you want to delete this invoice?")) return;
     try {
       await ownerDeleteOrder(id);
-      setOrders(await ownerFetchOrders());
+      setOrders(prev => prev.filter(o => o.id !== id));
       setStatus('Invoice deleted successfully');
     } catch {
       setStatus('Error deleting Invoice');
@@ -1408,8 +1574,12 @@ function OwnerApp() {
 
   const onDelete = async (id) => {
     if (!window.confirm("Delete?")) return;
-    await ownerDeleteProduct(id);
-    setProducts(await ownerFetchProducts());
+    try {
+      await ownerDeleteProduct(id);
+      setProducts(prev => prev.filter(p => p.id !== id));
+    } catch {
+      setStatus('Failed to delete product');
+    }
   };
 
   const onSaveSettings = async () => {
@@ -1436,19 +1606,60 @@ function OwnerApp() {
 
   const onWhatsAppCustomer = (order) => {
     const phone = order.phone?.replace(/\D/g, '');
-    const subtotal = order.items.reduce((acc, i) => acc + (i.lineTotal || 0), 0);
-    const deliveryFee = 0; // subtotal < 500 ? 50 : 0;
-    const itemsList = order.items.map(i => `*${i.quantity} x ${i.product?.name || `Product ${i.productId}`}* = ₹${i.lineTotal || 0}`).join('\n');
+    const targetPhone = phone?.length === 10 ? '91' + phone : phone;
 
-    const greeting = `Hello ${order.customerName},\n\nThank you for your order from *Sparkle Gift Shop*! 🎁\n\n`;
-    const orderDetails = `*Invoice No:* ${order.invoiceId}\n*Customer:* ${order.customerName}\n*Phone:* ${order.phone}\n*Address:* ${order.address || 'N/A'}\n\n`;
-    const items = `*Order Items:*\n${itemsList}\n\n`;
-    const totals = `*Subtotal:* ₹${subtotal.toFixed(2)}\n*Delivery:* ₹${deliveryFee.toFixed(2)}\n*Total:* ₹${order.total?.toFixed(2)}\n*Payment:* ${order.paymentMethod?.toUpperCase()}\n*Status:* ${order.isPaid ? 'PAID ✅' : 'PENDING ⏳'}\n\n`;
-    const footer = `We will deliver your order soon! 🚚\n\n*Sparkle Gift Shop*`;
+    const itemsList = order.items.map(i => {
+      const details = [i.variantSize, i.variantColor].filter(Boolean).join(' | ');
+      return `- ${i.product?.name || `Product ${i.productId}`}${details ? ` (${details})` : ''} x${i.quantity} = Rs.${i.lineTotal?.toFixed(0) || 0}`;
+    }).join('\n');
 
-    const msg = greeting + orderDetails + items + totals + footer;
+    const deliveryFee = order.deliveryFee || 0;
+    const deliveryStr = deliveryFee > 0 ? `Rs.${deliveryFee}` : 'FREE';
+    const paymentStatus = order.isPaid ? 'CONFIRMED' : 'PENDING';
 
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    const msg = `*SPARKLE GIFT SHOP*
+-----------------
+Order Confirmation
+
+Hello *${order.customerName}*,
+
+${order.isPaid ? 'Your payment has been received and your order is confirmed!' : 'Thank you for your order. Please complete payment to confirm.'}
+
+*Order Details:*
+-----------------
+Invoice: ${order.invoiceId}
+Date: ${new Date(order.createdAt).toLocaleDateString('en-IN')}
+
+*Delivery Address:*
+-----------------
+${order.customerName}
+${order.phone}
+${order.address || 'N/A'}
+
+*Items Ordered:*
+-----------------
+${itemsList}
+
+*Payment Summary:*
+-----------------
+Subtotal: Rs.${order.subtotal?.toFixed(2) || order.total?.toFixed(2)}
+${order.discount > 0 ? `Discount: -Rs.${order.discount}\n` : ''}Delivery: ${deliveryStr}
+*Total: Rs.${order.total?.toFixed(2)}*
+
+Payment Method: ${order.paymentMethod?.toUpperCase()}
+Payment Status: *${paymentStatus}*
+
+${order.isPaid ? 'Your order will be dispatched soon. We will update you with tracking details.' : 'Please complete payment to process your order.'}
+
+Track your order:
+${window.location.origin}/order-details/${order.invoiceId}
+
+For any queries, reply to this message.
+
+Thank you for shopping with us!
+*Sparkle Gift Shop*`;
+
+    window.open(`https://wa.me/${targetPhone}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   return (
@@ -1488,6 +1699,7 @@ function OwnerApp() {
             {[
               { id: 'orders', icon: 'bi-cart-check', label: 'Orders' },
               { id: 'products', icon: 'bi-box-seam', label: 'Products' },
+              { id: 'customers', icon: 'bi-person-badge', label: 'Customers' },
               { id: 'coupons', icon: 'bi-ticket-perforated', label: 'Coupons' },
               { id: 'teams', icon: 'bi-people', label: 'Teams' },
               { id: 'reports', icon: 'bi-graph-up', label: 'Reports' },
@@ -1559,16 +1771,16 @@ function OwnerApp() {
                         <div className="position-absolute top-0 end-0 m-2 d-flex flex-column gap-1">
                           <button
                             type="button"
-                            className="btn btn-white btn-sm rounded-circle shadow-sm border"
-                            style={{ width: '32px', height: '32px' }}
+                            className="btn bg-transparent btn-sm rounded-circle border-0"
+                            style={{ width: '36px', height: '36px' }}
                             onClick={() => onEdit(p)}
                           >
                             <i className="bi bi-pencil-fill text-primary" style={{ fontSize: '12px' }}></i>
                           </button>
                           <button
                             type="button"
-                            className="btn btn-white btn-sm rounded-circle shadow-sm border"
-                            style={{ width: '32px', height: '32px' }}
+                            className="btn bg-transparent btn-sm rounded-circle border-0"
+                            style={{ width: '36px', height: '36px' }}
                             onClick={() => onDelete(p.id)}
                           >
                             <i className="bi bi-trash3-fill text-danger" style={{ fontSize: '12px' }}></i>
@@ -1648,6 +1860,7 @@ function OwnerApp() {
           {tab === 'reports' && <ReportsPanel range={range} setRange={setRange} data={report} onDownload={downloadPdf} productData={productSales} reportUrl={settings.reportUrl} />}
           {tab === 'settings' && <SettingsPanel settings={settings} setSettings={setSettings} onSave={onSaveSettings} saving={savingSettings} />}
           {tab === 'teams' && <TeamsPanel admins={admins} setAdmins={setAdmins} />}
+          {tab === 'customers' && <CustomersPanel customers={customers} setCustomers={setCustomers} setStatus={setStatus} />}
         </div>
       </main>
 
