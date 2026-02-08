@@ -10,7 +10,9 @@ import {
   clientUpdateCartItem,
   clientVerifyCoupon,
   clientFetchCoupons,
+  getSocketURL
 } from '../api/clientApi';
+import { io } from 'socket.io-client';
 import { Link, useNavigate } from 'react-router-dom';
 
 const emptyOrderForm = {
@@ -71,10 +73,23 @@ function ProductCard({ product, onAdd, isWishlisted, onWishlistToggle, setStatus
           className="w-100 h-100 object-fit-cover"
           loading="lazy"
         />
+        {product.isCombo && (
+          <div className="position-absolute top-0 start-0 m-3 shadow-lg" style={{ zIndex: 2 }}>
+            <span className="badge rounded-pill px-3 py-2 fw-extrabold border-0 d-flex align-items-center gap-1 shadow-sm"
+              style={{
+                background: 'linear-gradient(45deg, #f59e0b, #fbbf24)',
+                color: '#451a03',
+                fontSize: '11px',
+                letterSpacing: '0.5px'
+              }}>
+              <i className="bi bi-stars"></i> COMBO PACK
+            </span>
+          </div>
+        )}
         <button
           type="button"
           className="btn btn-light rounded-circle position-absolute top-0 end-0 m-3 shadow-sm border-0 d-flex align-items-center justify-content-center"
-          style={{ width: '32px', height: '32px', opacity: 0.9 }}
+          style={{ width: '32px', height: '32px', opacity: 0.9, zIndex: 2 }}
           onClick={(e) => { e.stopPropagation(); onWishlistToggle(product.id); }}
         >
           <i className={`bi ${isWishlisted ? 'bi-heart-fill text-danger' : 'bi-heart text-muted'}`}></i>
@@ -88,6 +103,40 @@ function ProductCard({ product, onAdd, isWishlisted, onWishlistToggle, setStatus
         <p className="smallest text-muted mb-2 opacity-75 line-clamp-2" style={{ fontSize: '11px', minHeight: '32px' }}>
           {product.description || 'Premium quality handcrafted product designed for your special moments.'}
         </p>
+
+        {/* Combo Items List */}
+        {product.isCombo && product.comboItems && product.comboItems.length > 0 && (
+          <div className="mb-3 p-2 bg-primary bg-opacity-10 rounded-3 border border-primary border-opacity-10">
+            <div className="smallest fw-bold text-primary text-uppercase mb-2" style={{ fontSize: '9px', letterSpacing: '0.5px' }}>What's Included</div>
+            <div className="d-flex flex-column gap-1">
+              {product.comboItems.map((item, i) => (
+                <div key={i} className="d-flex align-items-center gap-2">
+                  {item.image ? (
+                    <img src={item.image} className="rounded-circle border" style={{ width: '20px', height: '20px', objectFit: 'cover' }} alt="" />
+                  ) : (
+                    <i className="bi bi-check2-circle text-primary" style={{ fontSize: '12px' }}></i>
+                  )}
+                  <div className="flex-grow-1 d-flex flex-column" style={{ lineHeight: '1.2' }}>
+                    <span className="fw-bold text-dark text-truncate" style={{ fontSize: '11px' }}>{item.name}</span>
+                    <div className="d-flex align-items-center gap-1 opacity-75">
+                      <span className="smallest text-primary" style={{ fontSize: '9px' }}>x{item.quantity}</span>
+                      {item.variantColor && (
+                        <span className="rounded-circle border d-inline-block"
+                          style={{ width: '8px', height: '8px', backgroundColor: item.variantColor }}
+                          title="Color Variant"
+                        ></span>
+                      )}
+                      {item.variantSize && (
+                        <span className="smallest text-muted fw-bold border px-1 rounded" style={{ fontSize: '8px' }}>{item.variantSize}</span>
+                      )}
+                    </div>
+                  </div>
+                  <span className="fw-extrabold text-primary" style={{ fontSize: '11px' }}>₹{item.price || 0}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Premium Variant Selector: Choice Pills */}
         {hasVariants && (
@@ -276,7 +325,14 @@ export default function ClientApp() {
   const [settings, setSettings] = useState({ upiQrUrl: '', whatsappNumber: '' });
   const [coupons, setCoupons] = useState([]);
   const [status, setStatus] = useStatus('');
-  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('sparkle_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [loading, setLoading] = useState(() => {
+    // If we have products and settings cached, we don't need a full-page loader
+    return !localStorage.getItem('sparkle_products') || !localStorage.getItem('sparkle_settings');
+  });
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All');
   const [step, setStep] = useState('shop'); // shop | checkout
@@ -305,6 +361,29 @@ export default function ClientApp() {
 
   useEffect(() => {
     load();
+
+    // Real-time Product Updates
+    const socket = io(getSocketURL());
+    socket.on('products_updated', async () => {
+      console.log("Real-time update received: Refreshing products...");
+      try {
+        const p = await clientFetchProducts();
+        if (p) {
+          setProducts(p); // React handles diffing, so this is fine
+          localStorage.setItem('sparkle_products', JSON.stringify(p));
+        }
+      } catch (e) {
+        console.error("Failed to refresh products via socket", e);
+      }
+    });
+
+    socket.on('settings_updated', (newSettings) => {
+      console.log("Real-time Settings Update:", newSettings);
+      setSettings(newSettings);
+      localStorage.setItem('sparkle_settings', JSON.stringify(newSettings));
+    });
+
+    return () => socket.disconnect();
   }, []);
 
   const load = async () => {
@@ -324,18 +403,21 @@ export default function ClientApp() {
       const hasToken = !!localStorage.getItem('sparkle_token');
 
       // 2. Fetch fresh essential data
-      const [p, s] = await Promise.all([
-        clientFetchProducts(),
-        clientFetchSettings()
-      ]);
+      // 2. Fetch fresh essential data - Parallel but independent updates
 
+      // Fetch Settings first (usually fast and critical for UI/Layout)
+      clientFetchSettings().then(s => {
+        if (s) {
+          setSettings(s);
+          localStorage.setItem('sparkle_settings', JSON.stringify(s));
+        }
+      }).catch(console.error);
+
+      // Fetch Products (might be large/slow)
+      const p = await clientFetchProducts();
       if (p) {
         setProducts(p);
         localStorage.setItem('sparkle_products', JSON.stringify(p));
-      }
-      if (s) {
-        setSettings(s);
-        localStorage.setItem('sparkle_settings', JSON.stringify(s));
       }
       setLoading(false); // Hide loader regardless of cache
 
@@ -364,13 +446,15 @@ export default function ClientApp() {
 
   const categories = useMemo(() => {
     const set = new Set(products.map((p) => p.category).filter(Boolean));
-    return ['All', ...Array.from(set).sort()];
+    const list = Array.from(set).sort();
+    if (!list.includes('Combos')) list.push('Combos');
+    return ['All', ...list];
   }, [products]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return products.filter((p) => {
-      const catOk = category === 'All' ? true : p.category === category;
+      const catOk = category === 'All' ? true : (category === 'Combos' ? (p.category === 'Combos' || p.isCombo) : p.category === category);
       const wishlistOk = wishlistOnly ? wishlist.includes(p.id) : true;
       const qOk =
         !q ||
@@ -576,8 +660,15 @@ export default function ClientApp() {
 
   const redirectToWhatsApp = (order) => {
     const itemsList = cart.items.map(i => {
+      // Resolve full product for combo check
+      const fullProd = products.find(p => p.id === i.productId) || i.product;
+
       const details = [i.variantSize, i.variantColor].filter(Boolean).join(' | ');
-      return `- ${i.product.name} ${details ? `[${details}]` : ''} x${i.quantity}`;
+      let line = `- ${fullProd?.name || i.product.name} ${details ? `[${details}]` : ''} x${i.quantity}`;
+      if (fullProd?.isCombo && fullProd?.comboItems?.length) {
+        line += '\n  ' + fullProd.comboItems.map(ci => `  • ${ci.name} x${ci.quantity}`).join('\n  ');
+      }
+      return line;
     }).join('\n');
     const deliveryStr = deliveryFee > 0 ? `₹${deliveryFee}` : 'FREE';
 
@@ -618,163 +709,180 @@ export default function ClientApp() {
         {/* Header & Cart Toggle */}
         <header className="navbar navbar-expand-lg px-2 px-sm-4 px-md-5" style={{
           height: 'auto',
-          minHeight: 'clamp(60px, 12vh, 120px)',
+          minHeight: 'clamp(60px, 12vh, 80px)', // Slightly reduced max height
           padding: '8px 0',
           background: '#fff',
           borderBottom: 'none'
         }}>
-          <div className="container-fluid d-flex justify-content-between align-items-center px-0 flex-wrap">
-            <Link to="/" className="d-flex align-items-center text-decoration-none" onClick={() => { setStep('shop'); setPaymentStep(false); }}>
-              <img src={settings.logoUrl || logo} alt="Logo" className="rounded-circle me-1 me-md-3 border border-1 border-white header-logo" style={{ width: 'clamp(40px, 10vw, 80px)', height: 'clamp(40px, 10vw, 80px)', objectFit: 'cover', flexShrink: 0 }} />
+          <div className="container-fluid d-flex flex-wrap align-items-center justify-content-between px-0">
+
+            {/* 1. LOGO (Order 1) */}
+            <Link to="/" className="d-flex align-items-center text-decoration-none order-1 me-auto" onClick={() => { setStep('shop'); setPaymentStep(false); }}>
+              <img src={settings.logoUrl || logo} alt="Logo" className="rounded-circle me-1 me-md-3 border border-1 border-white header-logo" style={{ width: 'clamp(35px, 9vw, 60px)', height: 'clamp(35px, 9vw, 60px)', objectFit: 'cover', flexShrink: 0 }} />
               <div className="header-title-container" style={{ minWidth: 0, flexShrink: 1 }}>
                 <h1 className="fw-extrabold mb-0 text-dark header-title" style={{
-                  fontSize: 'clamp(1rem, 5.5vw, 2.5rem)',
-                  letterSpacing: '-1px',
+                  fontSize: 'clamp(1rem, 5vw, 1.8rem)',
+                  letterSpacing: '-0.5px',
                   lineHeight: '1.1',
-                  textShadow: '2px 2px 0px rgba(0,0,0,0.05)',
                   wordBreak: 'keep-all'
                 }}>{settings.storeName || 'Sparkle Gift Shop'}</h1>
-                <p className="text-primary mb-0 fw-bold opacity-75 text-uppercase d-none d-sm-block" style={{ letterSpacing: '3px', fontSize: '10px', marginTop: '4px' }}>Premium Gifts</p>
+                <p className="text-primary mb-0 fw-bold opacity-75 text-uppercase d-block" style={{ letterSpacing: '2px', fontSize: '9px', marginTop: '2px' }}>Premium Gifts</p>
               </div>
             </Link>
 
-            <div className="d-flex align-items-center gap-1 gap-md-2 flex-shrink-0 ms-auto order-2 order-md-3 flex-wrap flex-md-nowrap justify-content-end">
-              {/* Navbar search bar */}
-              <div className="mx-2 mx-md-0 order-3 order-md-1 mt-2 mt-md-0 w-100 w-md-auto" style={{ maxWidth: '300px' }}>
-                <form
-                  onSubmit={(e) => e.preventDefault()}
-                  className="d-flex align-items-center rounded-pill px-3 transition-all"
-                  style={{
-                    backgroundColor: '#f8f9fa',
-                    border: searchFocus ? '1px solid #6d28d9' : '1px solid #eee',
-                    boxShadow: searchFocus ? '0 0 0 3px rgba(109, 40, 217, 0.1)' : 'none'
-                  }}
-                >
-                  <i className={`bi bi-search ${searchFocus ? 'text-primary' : 'text-muted'}`} style={{ fontSize: '14px' }}></i>
-                  <input
-                    className="form-control border-0 shadow-none ps-2 py-1 fw-medium bg-transparent"
-                    placeholder="Search gifts..."
-                    value={query}
-                    onChange={(e) => { setQuery(e.target.value); setStep('shop'); }}
-                    onFocus={() => setSearchFocus(true)}
-                    onBlur={() => setSearchFocus(false)}
-                    style={{ fontSize: '14px', color: '#4b5563' }}
-                  />
-                </form>
-              </div>
+            {/* 3. SEARCH BAR (Order 3 Mobile / Order 2 Desktop) */}
+            <div className="order-3 order-lg-2 mt-2 mt-lg-0 w-100 w-lg-auto mx-auto px-1 px-md-3 flex-grow-1" style={{ maxWidth: '600px' }}>
+              <form
+                onSubmit={(e) => e.preventDefault()}
+                className="d-flex align-items-center rounded-pill px-3 transition-all w-100"
+                style={{
+                  backgroundColor: '#f8f9fa',
+                  border: searchFocus ? '1px solid #6d28d9' : '1px solid #eee',
+                  boxShadow: searchFocus ? '0 0 0 3px rgba(109, 40, 217, 0.1)' : 'none',
+                  height: '42px'
+                }}
+              >
+                <i className={`bi bi-search ${searchFocus ? 'text-primary' : 'text-muted'}`} style={{ fontSize: '15px' }}></i>
+                <input
+                  className="form-control border-0 shadow-none ps-2 py-1 fw-medium bg-transparent"
+                  placeholder="Search for gifts..."
+                  value={query}
+                  onChange={(e) => { setQuery(e.target.value); setStep('shop'); }}
+                  onFocus={() => setSearchFocus(true)}
+                  onBlur={() => setSearchFocus(false)}
+                  style={{ fontSize: '15px', color: '#4b5563' }}
+                />
+              </form>
+            </div>
 
-              <div className="d-flex align-items-center gap-1 gap-md-2 order-1 order-md-2 ms-2">
+            {/* 2. BUTTONS (Order 2 Mobile / Order 3 Desktop) */}
+            <div className="d-flex align-items-center gap-2 order-2 order-lg-3 ms-2">
+              <button
+                className="btn btn-primary position-relative rounded-pill px-3 py-2 d-flex align-items-center gap-2"
+                onClick={() => setShowCart(true)}
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: 'none',
+                  boxShadow: 'none',
+                  height: '40px'
+                }}
+              >
+                <i className="bi bi-bag-heart fs-6"></i>
+                <span className="fw-bold d-none d-sm-inline" style={{ fontSize: '13px' }}>Cart</span>
+                {cart.items.length > 0 && (
+                  <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger shadow-sm" style={{ fontSize: '9px', padding: '4px 6px', border: '2px solid white' }}>
+                    {cart.items.length}
+                  </span>
+                )}
+              </button>
+
+              {user && (
+                <div className="d-none d-md-flex align-items-center gap-2 px-2 py-1 bg-light rounded-pill border shadow-sm">
+                  <div className="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style={{ width: '32px', height: '32px', fontSize: '12px' }}>
+                    {user.name?.charAt(0).toUpperCase()}
+                  </div>
+                </div>
+              )}
+
+              <div className="position-relative">
+                <style>{`
+                  @media (max-width: 991px) {
+                    .nav-menu-btn { background: transparent !important; border: none !important; box-shadow: none !important; }
+                  }
+                  @media (min-width: 992px) {
+                    .nav-menu-btn { background: white; border: 1px solid #dee2e6; }
+                  }
+                `}</style>
                 <button
-                  className="btn btn-primary position-relative rounded-pill px-3 px-sm-4 py-2 d-flex align-items-center gap-2"
-                  onClick={() => setShowCart(true)}
-                  style={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    border: 'none',
-                    boxShadow: 'none',
-                    fontSize: '14px'
-                  }}
+                  className={`btn nav-menu-btn rounded-pill px-0 px-lg-3 py-0 d-flex align-items-center justify-content-center text-dark`}
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+                  style={{ height: '40px', fontSize: '12px', zIndex: 3060, minWidth: '40px' }}
                 >
-                  <i className="bi bi-bag-heart fs-6"></i>
-                  <span className="fw-bold d-none d-sm-inline">Cart</span>
-                  {cart.items.length > 0 && (
-                    <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '9px', padding: '3px 6px' }}>
-                      {cart.items.length}
-                    </span>
-                  )}
+                  <i className={`bi ${menuOpen ? 'bi-x-lg' : 'bi-list'} fs-5`}></i>
+                  <span className="d-none d-lg-inline fw-bold ms-2">Menu</span>
                 </button>
 
-                <div className="position-relative">
-                  <button
-                    className={`btn btn-sm rounded-pill px-3 py-2 fw-bold d-flex align-items-center gap-2 border-2 dropdown-toggle ${menuOpen ? 'btn-primary' : 'btn-outline-primary'}`}
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
-                    style={{ fontSize: '12px', zIndex: 3060, position: 'relative' }}
-                  >
-                    <i className={`bi ${menuOpen ? 'bi-x-lg' : 'bi-list'} fs-6`}></i>
-                    <span className="d-none d-sm-inline">{menuOpen ? 'Close' : 'More'}</span>
-                  </button>
-
-                  {menuOpen && (
-                    <>
-                      <div
-                        className="position-fixed top-0 start-0 w-100 h-100"
-                        style={{ zIndex: 3055, background: 'transparent' }}
-                        onClick={() => setMenuOpen(false)}
-                      ></div>
-                      <ul className="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 show" style={{
-                        borderRadius: '16px',
-                        minWidth: '220px',
-                        overflow: 'hidden',
-                        position: 'absolute',
-                        right: 0,
-                        zIndex: 3060,
-                        animation: 'slideDown 0.3s ease'
-                      }}>
+                {menuOpen && (
+                  <>
+                    <div
+                      className="position-fixed top-0 start-0 w-100 h-100"
+                      style={{ zIndex: 3055, background: 'transparent' }}
+                      onClick={() => setMenuOpen(false)}
+                    ></div>
+                    <ul className="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 show" style={{
+                      borderRadius: '16px',
+                      minWidth: '220px',
+                      overflow: 'hidden',
+                      position: 'absolute',
+                      right: 0,
+                      zIndex: 3060
+                    }}>
+                      <li>
+                        <Link
+                          to="/track"
+                          className="dropdown-item py-3 px-4 d-flex align-items-center gap-3"
+                          style={{ fontSize: '14px' }}
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          <i className="bi bi-geo-alt-fill text-primary fs-5"></i>
+                          <span className="fw-semibold">Track Order</span>
+                        </Link>
+                      </li>
+                      <li>
+                        <button
+                          className="dropdown-item py-3 px-4 d-flex align-items-center gap-3 w-100 text-start"
+                          style={{ fontSize: '14px' }}
+                          onClick={() => {
+                            setWishlistOnly(!wishlistOnly);
+                            setMenuOpen(false);
+                            setStep('shop');
+                          }}
+                        >
+                          <i className={`bi ${wishlistOnly ? 'bi-heart-fill text-danger' : 'bi-heart text-primary'} fs-5`}></i>
+                          <span className="fw-semibold">{wishlistOnly ? 'Show All Products' : 'My Wishlist'}</span>
+                        </button>
+                      </li>
+                      <li><hr className="dropdown-divider my-0" /></li>
+                      {!localStorage.getItem('sparkle_token') ? (
                         <li>
                           <Link
-                            to="/track"
+                            to="/login"
                             className="dropdown-item py-3 px-4 d-flex align-items-center gap-3"
                             style={{ fontSize: '14px' }}
                             onClick={() => setMenuOpen(false)}
                           >
-                            <i className="bi bi-geo-alt-fill text-primary fs-5"></i>
-                            <span className="fw-semibold">Track Order</span>
+                            <i className="bi bi-person-check-fill text-primary fs-5"></i>
+                            <span className="fw-semibold">Sign In</span>
                           </Link>
                         </li>
+                      ) : (
                         <li>
                           <button
                             className="dropdown-item py-3 px-4 d-flex align-items-center gap-3 w-100 text-start"
                             style={{ fontSize: '14px' }}
                             onClick={() => {
-                              setWishlistOnly(!wishlistOnly);
                               setMenuOpen(false);
-                              setStep('shop');
+                              localStorage.removeItem('sparkle_token');
+                              localStorage.removeItem('sparkle_user');
+                              localStorage.removeItem('sparkle_pending_add');
+                              window.location.reload();
                             }}
                           >
-                            <i className={`bi ${wishlistOnly ? 'bi-heart-fill text-danger' : 'bi-heart text-primary'} fs-5`}></i>
-                            <span className="fw-semibold">{wishlistOnly ? 'Show All Products' : 'My Wishlist'}</span>
+                            <i className="bi bi-box-arrow-right text-danger fs-5"></i>
+                            <span className="fw-semibold text-danger">Logout</span>
                           </button>
                         </li>
-                        <li><hr className="dropdown-divider my-0" /></li>
-                        {!localStorage.getItem('sparkle_token') ? (
-                          <li>
-                            <Link
-                              to="/login"
-                              className="dropdown-item py-3 px-4 d-flex align-items-center gap-3"
-                              style={{ fontSize: '14px' }}
-                              onClick={() => setMenuOpen(false)}
-                            >
-                              <i className="bi bi-person-check-fill text-primary fs-5"></i>
-                              <span className="fw-semibold">Sign In</span>
-                            </Link>
-                          </li>
-                        ) : (
-                          <li>
-                            <button
-                              className="dropdown-item py-3 px-4 d-flex align-items-center gap-3 w-100 text-start"
-                              style={{ fontSize: '14px' }}
-                              onClick={() => {
-                                setMenuOpen(false);
-                                localStorage.removeItem('sparkle_token');
-                                localStorage.removeItem('sparkle_user');
-                                localStorage.removeItem('sparkle_pending_add');
-                                window.location.reload();
-                              }}
-                            >
-                              <i className="bi bi-box-arrow-right text-danger fs-5"></i>
-                              <span className="fw-semibold text-danger">Logout</span>
-                            </button>
-                          </li>
-                        )}
-                      </ul>
-                    </>
-                  )}
-                </div>
+                      )}
+                    </ul>
+                  </>
+                )}
               </div>
             </div>
+
           </div>
         </header>
-      </div>
+      </div >
 
       <div className="container-fluid p-0 py-4" style={{ marginTop: 'clamp(90px, 18vh, 150px)' }}>
 
@@ -814,7 +922,7 @@ export default function ClientApp() {
                           {/* Image */}
                           <div className="flex-shrink-0" style={{ width: '60px', height: '60px' }}>
                             <img
-                              src={displayImg || 'https://via.placeholder.com/60'}
+                              src={displayImg || 'https://placehold.co/60'}
                               alt={item.product?.name}
                               className="w-100 h-100 object-fit-cover rounded-3"
                             />
@@ -843,8 +951,22 @@ export default function ClientApp() {
                               )}
                             </div>
 
+                            {/* Combo Items in Cart */}
+                            {(products.find(p => p.id === item.productId) || item.product)?.isCombo && (products.find(p => p.id === item.productId) || item.product)?.comboItems?.length > 0 && (
+                              <div className="mt-2 p-2 bg-primary bg-opacity-10 rounded-2 border border-primary border-opacity-10">
+                                <div className="smallest fw-bold text-primary text-uppercase mb-1" style={{ fontSize: '8px' }}>Combo Includes:</div>
+                                {(products.find(p => p.id === item.productId) || item.product).comboItems.map((ci, idx) => (
+                                  <div key={idx} className="smallest text-dark d-flex align-items-center gap-1" style={{ fontSize: '10px' }}>
+                                    <i className="bi bi-check2 text-primary"></i>
+                                    <span className="flex-grow-1">{ci.name} x{ci.quantity}</span>
+                                    {/* <span className="fw-bold text-primary">₹{ci.price || 0}</span> */}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
                             {/* Price x Qty & Controls */}
-                            <div className="d-flex align-items-center justify-content-between">
+                            <div className="d-flex align-items-center justify-content-between mt-2">
                               <div className="text-muted fw-medium" style={{ fontSize: '13px' }}>
                                 ₹{item.variantPrice || item.product?.price} × {item.quantity}
                               </div>
@@ -952,6 +1074,7 @@ export default function ClientApp() {
                         {categories.map((c) => {
                           const iconMap = {
                             'All': 'bi-grid-fill',
+                            'Combos': 'bi-gift-fill',
                             'Cakes': 'bi-cake2',
                             'Flowers': 'bi-flower1',
                             'Coffee Mugs': 'bi-cup-hot',
@@ -959,7 +1082,6 @@ export default function ClientApp() {
                             'Keychains': 'bi-key',
                             'Lamps': 'bi-lamp',
                             'Personalized': 'bi-person-heart',
-                            'Decor': 'bi-house-heart',
                             'Gift Boxes': 'bi-gift',
                             'Clocks': 'bi-clock'
                           };
@@ -997,6 +1119,7 @@ export default function ClientApp() {
                         {categories.map((c) => {
                           const iconMap = {
                             'All': 'bi-grid-fill',
+                            'Combos': 'bi-gift-fill',
                             'Cakes': 'bi-cake2',
                             'Flowers': 'bi-flower1',
                             'Coffee Mugs': 'bi-cup-hot',
@@ -1004,7 +1127,6 @@ export default function ClientApp() {
                             'Keychains': 'bi-key',
                             'Lamps': 'bi-lamp',
                             'Personalized': 'bi-person-heart',
-                            'Decor': 'bi-house-heart',
                             'Gift Boxes': 'bi-gift'
                           };
                           const icon = iconMap[c] || 'bi-bag-heart';
@@ -1024,10 +1146,70 @@ export default function ClientApp() {
                       </div>
                     </div>
 
+                    {/* High-Impact Combo Store Banner on Home - Fully Responsive */}
+                    {category === 'All' && !query && settings.comboBannerActive !== false && (
+                      <div className="mb-4 mb-md-5">
+                        <div
+                          className="rounded-4 rounded-md-5 overflow-hidden position-relative shadow-lg cursor-pointer transition-transform hover-scale-sm"
+                          onClick={() => setCategory('Combos')}
+                        >
+                          <div className="position-absolute w-100 h-100" style={{
+                            background: 'linear-gradient(135deg, #4338ca 0%, #6d28d9 100%)',
+                          }}></div>
+                          {/* Decorative circles */}
+                          <div className="position-absolute top-0 end-0 bg-white bg-opacity-10 rounded-circle" style={{ width: 'clamp(150px, 30vw, 300px)', height: 'clamp(150px, 30vw, 300px)', marginRight: '-15%', marginTop: '-15%' }}></div>
+
+                          <div className="position-relative w-100 d-flex align-items-center p-3 p-sm-4 p-md-5" style={{ minHeight: 'clamp(180px, 25vw, 220px)' }}>
+                            <div className="row w-100 align-items-center m-0">
+                              <div className="col-8 col-md-7 text-start ps-0">
+                                <span className="badge bg-warning text-dark mb-2 px-2 px-md-3 py-1 py-md-2 rounded-pill fw-extrabold" style={{ fontSize: 'clamp(10px, 2vw, 12px)' }}>
+                                  {settings.comboBannerDiscount || 'SPECIAL OFFER'}
+                                </span>
+                                <h1 className="fw-extrabold text-white mb-2" style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', lineHeight: '1.2', wordBreak: 'break-word' }}>
+                                  {settings.comboBannerTitle || 'Exclusive Combo Stores'}
+                                </h1>
+                                <p className="text-white opacity-75 mb-3 d-none d-md-block" style={{ fontSize: 'clamp(0.9rem, 1.5vw, 1.1rem)' }}>
+                                  {settings.comboBannerSub || 'Save big with our exclusive handpicked gift combinations. Perfect for every occasion!'}
+                                </p>
+                                <button className="btn btn-light rounded-pill px-3 px-md-4 py-1 py-md-2 fw-bold text-primary shadow-sm" style={{ fontSize: 'clamp(12px, 2vw, 14px)' }}>
+                                  Explore Combos <i className="bi bi-arrow-right ms-1"></i>
+                                </button>
+                              </div>
+                              <div className="col-4 col-md-5 text-end pe-0 d-flex justify-content-end align-items-center">
+                                <i className="bi bi-gift-fill text-white opacity-25" style={{ fontSize: 'clamp(60px, 15vw, 120px)' }}></i>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Dedicated Combo Page Banner - Fully Responsive */}
+                    {category === 'Combos' && settings.comboBannerActive !== false && (
+                      <div className="mb-4 rounded-4 rounded-md-5 overflow-hidden position-relative shadow-lg">
+                        <div className="position-absolute w-100 h-100" style={{
+                          background: 'linear-gradient(45deg, #1e1b4b, #4338ca)',
+                          opacity: 1
+                        }}></div>
+                        <div className="position-relative w-100 d-flex flex-column align-items-center justify-content-center text-center p-4 p-md-5" style={{ minHeight: 'clamp(200px, 30vw, 260px)' }}>
+
+                          <h2 className="fw-extrabold text-white mb-2" style={{ fontSize: 'clamp(1.5rem, 5vw, 3rem)', lineHeight: '1.2', wordBreak: 'break-word' }}>
+                            {settings.comboBannerTitle || 'Exclusive Combo Stores'}
+                          </h2>
+                          <p className="text-white opacity-75 lead mb-0" style={{ maxWidth: '600px', fontSize: 'clamp(0.9rem, 2vw, 1.25rem)' }}>
+                            {settings.comboBannerSub || 'Save more with our curated gift sets. Handpicked combinations for your loved ones.'}
+                          </p>
+                          <div className="mt-3 mt-md-4 badge bg-warning text-dark px-3 px-md-4 py-2 rounded-pill fw-bold shadow-sm" style={{ fontSize: 'clamp(12px, 3vw, 16px)' }}>
+                            {settings.comboBannerDiscount || 'Up to 30% OFF'}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Results Count & Product Grid */}
                     <div className="d-flex justify-content-between align-items-center mb-4">
                       <div>
-                        <span className="fw-extrabold h4 mb-0">{wishlistOnly ? 'My Wishlist' : category}</span>
+                        <span className="fw-extrabold h4 mb-0">{category === 'Combos' ? '✨ Combo Offers' : (wishlistOnly ? 'My Wishlist' : category)}</span>
                         <span className="text-muted ms-2 smallest fw-bold">{filtered.length} Items</span>
                       </div>
                     </div>
@@ -1136,6 +1318,20 @@ export default function ClientApp() {
                                 <div className="text-muted fw-medium" style={{ fontSize: '13px' }}>
                                   ₹{item.variantPrice || item.product?.price} × {item.quantity}
                                 </div>
+
+                                {/* Combo Items in Checkout */}
+                                {(products.find(p => p.id === item.productId) || item.product)?.isCombo && (products.find(p => p.id === item.productId) || item.product)?.comboItems?.length > 0 && (
+                                  <div className="mt-2 p-2 bg-primary bg-opacity-10 rounded-2 border border-primary border-opacity-10">
+                                    <div className="smallest fw-bold text-primary text-uppercase mb-1" style={{ fontSize: '8px' }}>Combo Includes:</div>
+                                    {(products.find(p => p.id === item.productId) || item.product).comboItems.map((ci, idx) => (
+                                      <div key={idx} className="smallest text-dark d-flex align-items-center gap-1" style={{ fontSize: '10px' }}>
+                                        <i className="bi bi-check2 text-primary"></i>
+                                        <span className="flex-grow-1">{ci.name} x{ci.quantity}</span>
+                                        {/* <span className="fw-bold text-primary">₹{ci.price || 0}</span> */}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
 
                               {/* Total */}

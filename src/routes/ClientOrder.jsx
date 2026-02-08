@@ -172,7 +172,7 @@ Please confirm my order. Thank you!`;
                       <div className="d-flex gap-3 align-items-center">
                         {/* Image */}
                         <div className="flex-shrink-0" style={{ width: '60px', height: '60px' }}>
-                          <img src={displayImg || 'https://via.placeholder.com/60'} alt="" className="w-100 h-100 object-fit-cover rounded-3" />
+                          <img src={displayImg || 'https://placehold.co/60'} alt="" className="w-100 h-100 object-fit-cover rounded-3" />
                         </div>
 
                         {/* Content */}

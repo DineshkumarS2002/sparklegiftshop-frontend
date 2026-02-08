@@ -43,7 +43,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
-const emptyProduct = { name: '', price: '', originalPrice: '', category: '', image: '', description: '', isFlashSale: false, variants: [] };
+const emptyProduct = { name: '', price: '', originalPrice: '', category: '', image: '', description: '', isFlashSale: false, isCombo: false, variants: [], comboItems: [] };
 
 // Hook for status toast
 function useStatus(initial = '') {
@@ -81,9 +81,9 @@ function useStoreTitle(name) {
   }, [name]);
 }
 
-function ProductForm({ form, setForm, onSubmit, editing, onCancel }) {
+function ProductForm({ form, setForm, onSubmit, editing, onCancel, products }) {
   // Preview helper
-  const previewImage = form.image || 'https://via.placeholder.com/200?text=No+Image';
+  const previewImage = form.image || 'https://placehold.co/200?text=No+Image';
 
   return (
     <div className="card border-0 shadow-sm mb-5">
@@ -158,7 +158,24 @@ function ProductForm({ form, setForm, onSubmit, editing, onCancel }) {
                     <option value="Pillows">Pillows</option>
                     <option value="Lamps">Lamps</option>
                     <option value="Keychains">Keychains</option>
+                    <option value="Combos">Combos</option>
                   </select>
+                </div>
+
+                <div className="col-md-6 d-flex align-items-center">
+                  <div className="form-check form-switch p-3 bg-light rounded-pill border w-100 d-flex align-items-center justify-content-between px-4">
+                    <label className="form-check-label fw-bold text-primary mb-0" htmlFor="isCombo">
+                      <i className="bi bi-gift-fill me-2"></i> Combo Pack?
+                    </label>
+                    <input
+                      className="form-check-input ms-0"
+                      type="checkbox"
+                      id="isCombo"
+                      checked={form.isCombo}
+                      onChange={(e) => setForm(f => ({ ...f, isCombo: e.target.checked }))}
+                      style={{ width: '45px', height: '22px', cursor: 'pointer' }}
+                    />
+                  </div>
                 </div>
 
                 <div className="col-12">
@@ -296,6 +313,202 @@ function ProductForm({ form, setForm, onSubmit, editing, onCancel }) {
                     </div>
                   </div>
                 </div>
+                {/* Combo Items Section */}
+                {form.isCombo && (
+                  <div className="col-12 mt-4">
+                    <div className="card border-primary border-opacity-25 bg-primary bg-opacity-10 p-4 rounded-4">
+                      <h6 className="fw-bold text-primary mb-3 d-flex align-items-center gap-2">
+                        <i className="bi bi-box-fill"></i> Combo Package Items (Products Included)
+                      </h6>
+
+                      {form.comboItems && form.comboItems.length > 0 && (
+                        <div className="row g-2 mb-3">
+                          {form.comboItems.map((item, idx) => (
+                            <div key={idx} className="col-md-6">
+                              <div className="bg-white p-2 rounded-3 border d-flex align-items-center gap-2">
+                                {item.image && <img src={item.image} className="rounded" style={{ width: 40, height: 40, objectFit: 'cover' }} />}
+                                <div className="flex-grow-1">
+                                  <div className="fw-bold smallest text-truncate">{item.name}</div>
+                                  <div className="smallest text-muted d-flex align-items-center gap-1">
+                                    Qty: {item.quantity} | ₹{item.price || 0}
+                                    {item.variantColor && (
+                                      <span
+                                        className="d-inline-block rounded-circle border ml-1"
+                                        title={item.variantColor}
+                                        style={{ width: '12px', height: '12px', backgroundColor: item.variantColor }}
+                                      ></span>
+                                    )}
+                                    {item.variantSize && <span className="badge bg-light text-dark border ms-1">{item.variantSize}</span>}
+                                  </div>
+                                </div>
+                                <button type="button" className="btn btn-sm text-danger" onClick={() => setForm(f => ({ ...f, comboItems: f.comboItems.filter((_, i) => i !== idx) }))}>
+                                  <i className="bi bi-x-circle"></i>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="mb-4 bg-white p-3 rounded-4 border position-relative shadow-sm">
+                        <label className="smallest text-muted text-uppercase fw-bold mb-2 d-block">Search & Add Existing Product</label>
+                        <div className="input-group input-group-sm mb-2">
+                          <span className="input-group-text bg-light border-0"><i className="bi bi-search"></i></span>
+                          <input
+                            type="text"
+                            className="form-control border-0 bg-light"
+                            placeholder="Type product name to search..."
+                            autoComplete="off"
+                            onInput={(e) => {
+                              const q = e.target.value.toLowerCase();
+                              const list = document.getElementById('searchResultList');
+                              list.innerHTML = '';
+                              if (q.length > 1) {
+                                const results = products.filter(p => !p.isCombo && p.name.toLowerCase().includes(q));
+                                if (results.length > 0) {
+                                  list.style.display = 'block';
+                                  results.slice(0, 5).forEach(p => {
+                                    const li = document.createElement('div');
+                                    li.className = 'p-2 border-bottom d-flex flex-column gap-2 small hover-bg-light';
+
+                                    // Main Product Row
+                                    const mainRow = document.createElement('div');
+                                    mainRow.className = 'd-flex align-items-center gap-2 cursor-pointer';
+                                    mainRow.style.cursor = 'pointer';
+                                    mainRow.innerHTML = `<img src="${p.image || 'https://placehold.co/30'}" style="width:30px;height:30px;object-fit:cover" class="rounded border"/> 
+                                        <div class="flex-grow-1">
+                                          <div class="fw-bold text-dark">${p.name}</div>
+                                          <div class="smallest text-muted">₹${p.price}</div>
+                                        </div>`;
+
+                                    // Variant Selection Container
+                                    const variantContainer = document.createElement('div');
+                                    variantContainer.className = 'd-flex flex-wrap gap-1 ps-4';
+                                    variantContainer.style.display = 'none';
+
+                                    if (p.variants && p.variants.length > 0) {
+                                      mainRow.onclick = (e) => {
+                                        e.stopPropagation();
+                                        // Toggle variants
+                                        variantContainer.style.display = variantContainer.style.display === 'none' ? 'flex' : 'none';
+                                      };
+
+                                      p.variants.forEach(v => {
+                                        const btn = document.createElement('button');
+                                        btn.className = 'btn btn-sm btn-outline-secondary py-1 px-2 smallest d-flex align-items-center gap-1';
+                                        btn.style.fontSize = '10px';
+
+                                        // Color indicator
+                                        let colorHtml = '';
+                                        if (v.color) {
+                                          colorHtml = `<span style="width:10px;height:10px;border-radius:50%;background-color:${v.color};border:1px solid #ddd;display:inline-block;"></span>`;
+                                        }
+
+                                        btn.innerHTML = `${v.size || ''} ${colorHtml} - ₹${v.price}`;
+                                        btn.onclick = (e) => {
+                                          e.stopPropagation();
+                                          const newItem = {
+                                            name: `${p.name}`, // Clean name, we show variant details separately
+                                            quantity: 1,
+                                            price: v.price,
+                                            image: v.image || p.image,
+                                            variantSize: v.size,
+                                            variantColor: v.color
+                                          };
+                                          setForm(f => ({ ...f, comboItems: [...(f.comboItems || []), newItem] }));
+                                          list.style.display = 'none';
+                                          document.querySelector('input[placeholder="Type product name to search..."]').value = '';
+                                        };
+                                        variantContainer.appendChild(btn);
+                                      });
+                                    } else {
+                                      mainRow.onclick = () => {
+                                        const newItem = { name: p.name, quantity: 1, price: p.price, image: p.image };
+                                        setForm(f => ({ ...f, comboItems: [...(f.comboItems || []), newItem] }));
+                                        list.style.display = 'none';
+                                        document.querySelector('input[placeholder="Type product name to search..."]').value = '';
+                                      };
+                                    }
+
+                                    li.appendChild(mainRow);
+                                    if (p.variants && p.variants.length > 0) {
+                                      const hint = document.createElement('div');
+                                      hint.className = 'smallest text-primary ps-5 pb-1';
+                                      hint.innerText = 'Click to see variants';
+                                      li.appendChild(hint);
+                                      li.appendChild(variantContainer);
+                                    } else {
+                                      // Auto add hint
+                                    }
+
+                                    list.appendChild(li);
+                                  });
+                                } else { list.style.display = 'none'; }
+                              } else { list.style.display = 'none'; }
+                            }}
+                          />
+                        </div>
+                        <div id="searchResultList" className="position-absolute w-100 bg-white shadow-lg border rounded-3 overflow-hidden" style={{ zIndex: 10, display: 'none', top: '100%' }}></div>
+                      </div>
+
+                      <div className="row g-2 bg-white p-3 rounded-4 shadow-sm border mb-3">
+                        <div className="col-12"><small className="text-muted fw-bold smallest text-uppercase">Manual Entry (Or select from search above)</small></div>
+                        <div className="col-md-5">
+                          <input type="text" id="comboItemName" className="form-control form-control-sm" placeholder="Product Name" />
+                        </div>
+                        <div className="col-md-2">
+                          <input type="number" id="comboItemQty" className="form-control form-control-sm" placeholder="Qty" defaultValue="1" />
+                        </div>
+                        <div className="col-md-5">
+                          <input type="number" id="comboItemPrice" className="form-control form-control-sm" placeholder="Price (₹)" />
+                        </div>
+                        <div className="col-md-12">
+                          <input type="text" id="comboItemImg" className="form-control form-control-sm" placeholder="Image URL (Optional)" />
+                        </div>
+                        <div className="col-12 mt-2">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-primary w-100 rounded-pill"
+                            onClick={() => {
+                              const name = document.getElementById('comboItemName').value;
+                              const qty = document.getElementById('comboItemQty').value;
+                              const price = document.getElementById('comboItemPrice').value;
+                              const img = document.getElementById('comboItemImg').value;
+                              if (!name) return alert('Enter product name');
+                              const newItem = { name, quantity: Number(qty) || 1, price: Number(price) || 0, image: img || '' };
+                              setForm(f => ({ ...f, comboItems: [...(f.comboItems || []), newItem] }));
+                              document.getElementById('comboItemName').value = '';
+                              document.getElementById('comboItemQty').value = '1';
+                              document.getElementById('comboItemPrice').value = '';
+                              document.getElementById('comboItemImg').value = '';
+                            }}
+                          >
+                            <i className="bi bi-plus-lg me-1"></i> Add Manual Item
+                          </button>
+                        </div>
+                      </div>
+
+                      {form.comboItems?.length > 0 && (
+                        <div className="mt-2 p-3 bg-white rounded-4 border dashed shadow-sm">
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <span className="small text-muted fw-bold">Combined Items Total:</span>
+                            <span className="h5 mb-0 fw-extrabold text-dark">₹{form.comboItems.reduce((acc, ci) => acc + (ci.price * ci.quantity), 0)}</span>
+                          </div>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-primary w-100 rounded-pill fw-bold"
+                            onClick={() => {
+                              const total = form.comboItems.reduce((acc, ci) => acc + (ci.price * ci.quantity), 0);
+                              setForm(f => ({ ...f, originalPrice: total }));
+                            }}
+                          >
+                            <i className="bi bi-magic me-1"></i> Use Sum as Original Price
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -319,7 +532,7 @@ function ProductForm({ form, setForm, onSubmit, editing, onCancel }) {
                     src={previewImage}
                     alt="Preview"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    onError={(e) => e.target.src = 'https://via.placeholder.com/200?text=No+Image'}
+                    onError={(e) => e.target.src = 'https://placehold.co/200?text=No+Image'}
                   />
                 </div>
                 <div className="card-body">
@@ -343,9 +556,9 @@ function ProductForm({ form, setForm, onSubmit, editing, onCancel }) {
               <span>{editing ? 'Save Changes' : 'Publish Product'}</span>
             </button>
           </div>
-        </form>
-      </div>
-    </div>
+        </form >
+      </div >
+    </div >
   );
 }
 
@@ -367,7 +580,7 @@ function SettingsPanel({ settings, setSettings, onSave, saving }) {
                   <div className="position-relative group" style={{ width: 100, height: 100 }}>
                     <div className="w-100 h-100 rounded-circle overflow-hidden position-relative border border-2 border-dashed border-secondary">
                       <img
-                        src={settings.logoUrl || 'https://via.placeholder.com/100?text=Logo'}
+                        src={settings.logoUrl || 'https://placehold.co/100?text=Logo'}
                         alt="Logo"
                         className="w-100 h-100 object-fit-cover bg-light"
                       />
@@ -404,6 +617,70 @@ function SettingsPanel({ settings, setSettings, onSave, saving }) {
                     />
                     <p className="text-muted smallest mt-1 mb-0 ms-3">This name will appear across your app and invoices.</p>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="card border-0 shadow-sm overflow-hidden mb-4" style={{ borderRadius: '1rem' }}>
+          <div className="card-header bg-white py-3 px-4 border-bottom">
+            <h6 className="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+              <i className="bi bi-stars text-warning"></i> Home Page Combo Banner
+            </h6>
+          </div>
+          <div className="card-body p-4 text-start">
+            <div className="row g-4">
+              <div className="col-12">
+                <div className="form-check form-switch mb-3">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="bannerActive"
+                    checked={settings.comboBannerActive}
+                    onChange={(e) => setSettings(s => ({ ...s, comboBannerActive: e.target.checked }))}
+                  />
+                  <label className="form-check-label fw-bold" htmlFor="bannerActive">Show Offer Banner on Home Page</label>
+                </div>
+              </div>
+              <div className="col-md-12">
+                <label className="form-label">Banner Main Title</label>
+                <input
+                  className="form-control"
+                  value={settings.comboBannerTitle || ''}
+                  onChange={(e) => setSettings(s => ({ ...s, comboBannerTitle: e.target.value }))}
+                  placeholder="e.g. Exclusive Combo Stores"
+                />
+              </div>
+              <div className="col-md-12">
+                <label className="form-label">Banner Description</label>
+                <textarea
+                  className="form-control"
+                  rows={2}
+                  value={settings.comboBannerSub || ''}
+                  onChange={(e) => setSettings(s => ({ ...s, comboBannerSub: e.target.value }))}
+                  placeholder="Small text below title..."
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label">Discount Text Badge</label>
+                <input
+                  className="form-control"
+                  value={settings.comboBannerDiscount || ''}
+                  onChange={(e) => setSettings(s => ({ ...s, comboBannerDiscount: e.target.value }))}
+                  placeholder="e.g. Up to 30% OFF"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 pt-3 border-top">
+              <label className="smallest text-muted text-uppercase fw-bold mb-2 d-block">Live Preview</label>
+              <div className="rounded-4 overflow-hidden position-relative shadow-sm" style={{ height: '140px' }}>
+                <div className="position-absolute w-100 h-100" style={{ background: 'linear-gradient(135deg, #4338ca 0%, #6d28d9 100%)' }}></div>
+                <div className="position-absolute w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center p-3">
+                  <h5 className="fw-extrabold text-white mb-1 small">{settings.comboBannerTitle}</h5>
+                  <p className="text-white opacity-75 smallest mb-2">{settings.comboBannerSub}</p>
+                  <span className="badge bg-warning text-dark smallest rounded-pill fw-bold">{settings.comboBannerDiscount}</span>
                 </div>
               </div>
             </div>
@@ -471,15 +748,14 @@ function SettingsPanel({ settings, setSettings, onSave, saving }) {
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
-
       </div>
     </div>
   );
 }
 
-function OrdersList({ orders, onWhatsApp, onDeleteOrder, onToggleDispatch, onTogglePayment, onToggleDelivered, onPreview }) {
+function OrdersList({ orders, products = [], onWhatsApp, onDeleteOrder, onToggleDispatch, onTogglePayment, onToggleDelivered, onPreview }) {
   const navigate = useNavigate();
-  if (orders.length === 0) return <div className="text-center p-5 text-muted">No orders found.</div>;
+  if (!orders || orders.length === 0) return <div className="text-center p-5 text-muted">No orders found.</div>;
   return (
     <div className="row g-3">
       {orders.map((o) => {
@@ -488,8 +764,8 @@ function OrdersList({ orders, onWhatsApp, onDeleteOrder, onToggleDispatch, onTog
         const deliveryFee = o.deliveryFee || 0;
 
         return (
-          <div key={o.id} className="col-12 col-lg-6 col-xl-4">
-            <div className="card h-100 border-0 shadow-sm transition-all hover-shadow" style={{ borderRadius: '12px' }}>
+          <div key={o.id} className="col-12 col-lg-6 col-xl-4 ">
+            <div className="card h-100 border-0 shadow-sm transition-all hover-shadow p-3" style={{ borderRadius: '12px' }}>
               {/* Header Section */}
               <div className="card-header bg-gradient bg-opacity-10 border-0 pt-3 pb-2">
                 <div className="d-flex justify-content-between align-items-start mb-2">
@@ -510,9 +786,9 @@ function OrdersList({ orders, onWhatsApp, onDeleteOrder, onToggleDispatch, onTog
                 <div className="d-flex flex-wrap gap-2">
                   <button
                     type="button"
-                    className={`btn btn-sm py-1 px-3 rounded-pill fw-bold border-0 ${o.dispatched ? 'bg-success text-white' : 'bg-warning text-dark'}`}
+                    className={`btn btn-sm py-2 px-3 rounded-pill fw-bold border-0 ${o.dispatched ? 'bg-success text-white' : 'bg-warning text-dark'}`}
                     onClick={() => onToggleDispatch(o.id, o.dispatched)}
-                    style={{ fontSize: '10px' }}
+                    style={{ fontSize: '11px' }}
                     title="Toggle Dispatch Status"
                   >
                     <i className={`bi ${o.dispatched ? 'bi-truck' : 'bi-clock-history'} me-1`}></i>
@@ -520,9 +796,9 @@ function OrdersList({ orders, onWhatsApp, onDeleteOrder, onToggleDispatch, onTog
                   </button>
                   <button
                     type="button"
-                    className={`btn btn-sm py-1 px-3 rounded-pill fw-bold border-0 ${o.isPaid ? 'bg-success text-white' : 'bg-success bg-opacity-75 text-white'}`}
+                    className={`btn btn-sm py-2 px-3 rounded-pill fw-bold border-0 ${o.isPaid ? 'bg-success text-white' : 'bg-success bg-opacity-75 text-white'}`}
                     onClick={() => onTogglePayment(o.id, o.isPaid)}
-                    style={{ fontSize: '10px' }}
+                    style={{ fontSize: '11px' }}
                     title="Toggle Payment Status"
                   >
                     <i className={`bi ${o.isPaid ? 'bi-check-circle-fill' : 'bi-x-circle-fill'} me-1`}></i>
@@ -530,16 +806,16 @@ function OrdersList({ orders, onWhatsApp, onDeleteOrder, onToggleDispatch, onTog
                   </button>
                   <span
                     className="badge bg-light text-dark border px-3 py-2"
-                    style={{ fontSize: '10px' }}
+                    style={{ fontSize: '11px' }}
                   >
                     <i className={`bi ${o.paymentMethod === 'cod' ? 'bi-cash' : 'bi-qr-code-scan'} me-1`}></i>
                     {o.paymentMethod === 'cod' ? 'COD' : 'UPI'}
                   </span>
                   <button
                     type="button"
-                    className="btn btn-sm py-1 px-3 rounded-pill fw-bold border-0 bg-info text-white"
+                    className="btn btn-sm py-2 px-3 rounded-pill fw-bold border-0 bg-info text-white"
                     onClick={() => navigate(`/admin/tracking/${o.id}`)}
-                    style={{ fontSize: '10px' }}
+                    style={{ fontSize: '11px' }}
                     title="Update Tracking Details"
                   >
                     <i className="bi bi-geo-alt-fill me-1"></i> TRACK
@@ -584,140 +860,160 @@ function OrdersList({ orders, onWhatsApp, onDeleteOrder, onToggleDispatch, onTog
                   )
                 )}
 
-                {/* Customer Info Section */}
-                <div className="mb-3 p-2 bg-light rounded">
-                  <div className="d-flex align-items-start gap-2 mb-2">
-                    <div className="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style={{ width: '36px', height: '36px' }}>
+                {/* Customer Info Section - Chat Style */}
+                <div className="mb-3 p-3 bg-light rounded-4 border-0">
+                  <div className="d-flex align-items-center gap-2 mb-2">
+                    <div className="bg-white p-1 rounded-circle shadow-sm d-flex align-items-center justify-content-center" style={{ width: '30px', height: '30px' }}>
                       <i className="bi bi-person-fill text-primary"></i>
                     </div>
-                    <div className="flex-grow-1">
-                      <h6 className="fw-bold mb-1 text-dark" style={{ fontSize: '14px' }}>{o.customerName}</h6>
-                      <a href={`tel:${o.phone}`} className="text-primary fw-semibold text-decoration-none d-flex align-items-center" style={{ fontSize: '12px' }}>
-                        <i className="bi bi-telephone-fill me-1"></i> {o.phone}
-                      </a>
-                    </div>
+                    <h6 className="fw-bold mb-0 text-dark small">{o.customerName}</h6>
                   </div>
-                  <div className="text-muted small border-start border-3 border-danger ps-2 py-1">
+                  <a href={`tel:${o.phone}`} className="text-primary fw-bold text-decoration-none d-flex align-items-center small ms-1 mb-2">
+                    <i className="bi bi-telephone-fill me-2 bg-white rounded-circle p-1 shadow-sm fs-6"></i> {o.phone}
+                  </a>
+                  <div className="text-muted small ps-1 lh-sm bg-white p-2 rounded-3 border border-light shadow-sm">
                     <i className="bi bi-geo-alt-fill me-1 text-danger"></i>
-                    <strong>Address:</strong> {o.address || 'No address provided'}
+                    {o.address || 'No address provided'}
                   </div>
                 </div>
 
-                {/* Customer Note */}
-                {o.note && (
-                  <div className="alert alert-info py-2 px-3 mb-3 border-0 border-start border-4 border-info" style={{ fontSize: '12px' }}>
-                    <i className="bi bi-sticky-fill me-2"></i>
-                    <strong>Note:</strong> {o.note}
-                  </div>
-                )}
+                {/* Card Body Continued... */}
 
-                {/* Order Items Section */}
-                <div className="mb-3 flex-grow-1">
-                  <div className="d-flex align-items-center justify-content-between mb-2">
-                    <p className="fw-bold text-dark mb-0" style={{ fontSize: '12px' }}>
-                      <i className="bi bi-bag-check-fill me-1 text-primary"></i> Order Items
-                    </p>
-                    <span className="badge bg-primary bg-opacity-10 text-primary" style={{ fontSize: '10px' }}>
-                      {o.items.length} {o.items.length === 1 ? 'Item' : 'Items'}
-                    </span>
-                  </div>
-                  <div className="order-items-scroll" style={{ maxHeight: '250px', overflowY: 'auto', overflowX: 'hidden' }}>
-                    {o.items.map((i, idx) => {
-                      // Resolve display image
-                      let displayImg = i.product?.image;
-                      if (i.product?.variants?.length > 0) {
-                        const v = i.product.variants.find(v =>
-                          (v.size == i.variantSize || (!v.size && !i.variantSize)) &&
-                          (v.color == i.variantColor || (!v.color && !i.variantColor))
-                        );
-                        if (v && v.image) displayImg = v.image;
-                      }
+                {/* ... (skipping some unchanged parts if manageable, but replace block is safer) ... */}
+                {/* Actually, I need to target specific chunks or a larger block. I'll target the Customer Info first. */}
+              </div>
 
-                      return (
-                        <div className="card border shadow-sm mb-2 p-2 rounded-3" key={idx}>
-                          <div className="d-flex gap-3 align-items-center">
-                            {/* Image */}
-                            <div className="flex-shrink-0" style={{ width: '50px', height: '50px' }}>
-                              <img src={displayImg || 'https://via.placeholder.com/50'} alt="" className="w-100 h-100 object-fit-cover rounded-3" />
+              {/* Customer Note */}
+              {o.note && (
+                <div className="alert alert-info py-2 px-3 mb-3 border-0 border-start border-4 border-info" style={{ fontSize: '12px' }}>
+                  <i className="bi bi-sticky-fill me-2"></i>
+                  <strong>Note:</strong> {o.note}
+                </div>
+              )}
+
+              {/* Order Items Section */}
+              <div className="mb-3 flex-grow-1">
+                <div className="d-flex align-items-center justify-content-between mb-2">
+                  <p className="fw-bold text-dark mb-0" style={{ fontSize: '12px' }}>
+                    <i className="bi bi-bag-check-fill me-1 text-primary"></i> Order Items
+                  </p>
+                  <span className="badge bg-primary bg-opacity-10 text-primary" style={{ fontSize: '10px' }}>
+                    {o.items.length} {o.items.length === 1 ? 'Item' : 'Items'}
+                  </span>
+                </div>
+                <div className="order-items-scroll" style={{ maxHeight: '250px', overflowY: 'auto', overflowX: 'hidden' }}>
+                  {o.items.map((i, idx) => {
+                    // Resolve display image
+                    let displayImg = i.product?.image;
+                    if (i.product?.variants?.length > 0) {
+                      const v = i.product.variants.find(v =>
+                        (v.size == i.variantSize || (!v.size && !i.variantSize)) &&
+                        (v.color == i.variantColor || (!v.color && !i.variantColor))
+                      );
+                      if (v && v.image) displayImg = v.image;
+                    }
+
+                    // Resolve combo product details from the full products list
+                    const comboProduct = products.find(p => p.id === i.productId) || i.product;
+
+                    return (
+                      <div className="card border shadow-sm mb-2 p-2 rounded-3" key={idx}>
+                        <div className="d-flex gap-3 align-items-center">
+                          {/* Image */}
+                          <div className="flex-shrink-0" style={{ width: '50px', height: '50px' }}>
+                            <img src={displayImg || 'https://placehold.co/50'} alt="" className="w-100 h-100 object-fit-cover rounded-3" />
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-grow-1 min-w-0">
+                            <h6 className="mb-1 text-truncate fw-bold text-dark" style={{ fontSize: '13px' }}>
+                              {i.product?.name || `Product ${i.productId}`}
+                            </h6>
+
+                            {/* Variants */}
+                            <div className="d-flex align-items-center gap-2 mb-1">
+                              {i.variantSize && (
+                                <span className="badge bg-secondary bg-opacity-10 text-dark border px-2 py-0" style={{ fontSize: '9px', borderRadius: '4px' }}>
+                                  {i.variantSize}
+                                </span>
+                              )}
+                              {i.variantColor && (
+                                <span
+                                  className="border rounded-circle d-inline-block"
+                                  style={{ width: '14px', height: '14px', backgroundColor: i.variantColor, flexShrink: 0 }}
+                                ></span>
+                              )}
                             </div>
 
-                            {/* Content */}
-                            <div className="flex-grow-1 min-w-0">
-                              <h6 className="mb-1 text-truncate fw-bold text-dark" style={{ fontSize: '13px' }}>
-                                {i.product?.name || `Product ${i.productId}`}
-                              </h6>
+                            <div className="text-muted fw-medium" style={{ fontSize: '11px' }}>
+                              ₹{i.variantPrice || i.product?.price} × {i.quantity}
+                            </div>
 
-                              {/* Variants */}
-                              <div className="d-flex align-items-center gap-2 mb-1">
-                                {i.variantSize && (
-                                  <span className="badge bg-secondary bg-opacity-10 text-dark border px-2 py-0" style={{ fontSize: '9px', borderRadius: '4px' }}>
-                                    {i.variantSize}
-                                  </span>
-                                )}
-                                {i.variantColor && (
-                                  <span
-                                    className="border rounded-circle d-inline-block"
-                                    style={{ width: '14px', height: '14px', backgroundColor: i.variantColor, flexShrink: 0 }}
-                                  ></span>
-                                )}
+                            {/* Combo Items Display */}
+                            {comboProduct?.isCombo && comboProduct?.comboItems?.length > 0 && (
+                              <div className="mt-2 pt-2 border-top border-dashed">
+                                <div className="smallest text-muted text-uppercase fw-bold mb-1" style={{ fontSize: '10px', letterSpacing: '0.5px' }}>Includes:</div>
+                                {comboProduct.comboItems.map((ci, cidx) => (
+                                  <div key={cidx} className="d-flex align-items-start mb-1" style={{ fontSize: '11px' }}>
+                                    <span className="text-secondary me-2">•</span>
+                                    <span className="text-dark opacity-75 flex-grow-1 lh-sm">{ci.name}</span>
+                                    <span className="badge bg-light text-secondary border ms-2" style={{ fontSize: '9px', fontWeight: '600' }}>x{ci.quantity}</span>
+                                  </div>
+                                ))}
                               </div>
+                            )}
+                          </div>
 
-                              <div className="text-muted fw-medium" style={{ fontSize: '11px' }}>
-                                ₹{i.variantPrice || i.product?.price} × {i.quantity}
-                              </div>
-                            </div>
-
-                            {/* Total */}
-                            <div className="fw-bold text-primary text-end" style={{ fontSize: '13px' }}>
-                              ₹{i.lineTotal?.toFixed(0)}
-                            </div>
+                          {/* Total */}
+                          <div className="fw-bold text-primary text-end" style={{ fontSize: '13px' }}>
+                            ₹{i.lineTotal?.toFixed(0)}
                           </div>
                         </div>
-                      );
-                    })}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Price Summary */}
+              <div className="border-top pt-3 mt-auto">
+                <div className="d-flex justify-content-between mb-2" style={{ fontSize: '12px' }}>
+                  <span className="text-muted">Subtotal</span>
+                  <span className="fw-semibold text-dark">₹{subtotal.toFixed(2)}</span>
+                </div>
+                {discount > 0 && (
+                  <div className="d-flex justify-content-between mb-2" style={{ fontSize: '12px' }}>
+                    <span className="text-success"><i className="bi bi-tag-fill me-1"></i>Discount</span>
+                    <span className="fw-semibold text-success">-₹{discount.toFixed(2)}</span>
                   </div>
+                )}
+                <div className="d-flex justify-content-between mb-3" style={{ fontSize: '12px' }}>
+                  <span className="text-muted">Delivery Fee</span>
+                  <span className="fw-semibold text-dark">{deliveryFee > 0 ? `₹${deliveryFee.toFixed(2)}` : <span className="badge bg-success text-white" style={{ fontSize: '10px' }}>FREE</span>}</span>
                 </div>
 
-                {/* Price Summary */}
-                <div className="border-top pt-3 mt-auto">
-                  <div className="d-flex justify-content-between mb-2" style={{ fontSize: '12px' }}>
-                    <span className="text-muted">Subtotal</span>
-                    <span className="fw-semibold text-dark">₹{subtotal.toFixed(2)}</span>
+                {/* Total & Actions */}
+                <div className="bg-primary bg-opacity-10 p-3 rounded border border-primary border-opacity-25">
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <span className="text-dark fw-semibold" style={{ fontSize: '13px' }}>Total Amount</span>
+                    <span className="h4 fw-bold mb-0 text-primary">₹{o.total?.toFixed(2)}</span>
                   </div>
-                  {discount > 0 && (
-                    <div className="d-flex justify-content-between mb-2" style={{ fontSize: '12px' }}>
-                      <span className="text-success"><i className="bi bi-tag-fill me-1"></i>Discount</span>
-                      <span className="fw-semibold text-success">-₹{discount.toFixed(2)}</span>
-                    </div>
-                  )}
-                  <div className="d-flex justify-content-between mb-3" style={{ fontSize: '12px' }}>
-                    <span className="text-muted">Delivery Fee</span>
-                    <span className="fw-semibold text-dark">{deliveryFee > 0 ? `₹${deliveryFee.toFixed(2)}` : <span className="badge bg-success text-white" style={{ fontSize: '10px' }}>FREE</span>}</span>
-                  </div>
-
-                  {/* Total & Actions */}
-                  <div className="bg-primary bg-opacity-10 p-3 rounded border border-primary border-opacity-25">
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <span className="text-dark fw-semibold" style={{ fontSize: '13px' }}>Total Amount</span>
-                      <span className="h4 fw-bold mb-0 text-primary">₹{o.total?.toFixed(2)}</span>
-                    </div>
-                    <div className="d-flex gap-2">
-                      <Link
-                        to={`/client/order/${o.invoiceId}/label`}
-                        target="_blank"
-                        className="btn btn-primary btn-sm rounded-pill shadow-sm flex-grow-1 fw-bold"
-                        style={{ fontSize: '11px' }}
-                      >
-                        <i className="bi bi-printer-fill me-1"></i> PRINT LABEL
-                      </Link>
-                      <button
-                        className="btn btn-success btn-sm rounded-pill shadow-sm fw-bold"
-                        onClick={() => onWhatsApp(o)}
-                        style={{ fontSize: '11px', minWidth: '80px' }}
-                      >
-                        <i className="bi bi-whatsapp me-1"></i> WhatsApp
-                      </button>
-                    </div>
+                  <div className="d-flex gap-2">
+                    <Link
+                      to={`/client/order/${o.invoiceId}/label`}
+                      target="_blank"
+                      className="btn btn-primary btn-sm rounded-pill shadow-sm flex-grow-1 fw-bold"
+                      style={{ fontSize: '11px' }}
+                    >
+                      <i className="bi bi-printer-fill me-1"></i> PRINT LABEL
+                    </Link>
+                    <button
+                      className="btn btn-success btn-sm rounded-pill shadow-sm fw-bold"
+                      onClick={() => onWhatsApp(o)}
+                      style={{ fontSize: '11px', minWidth: '80px' }}
+                    >
+                      <i className="bi bi-whatsapp me-1"></i> WhatsApp
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1262,17 +1558,17 @@ function CustomersPanel({ customers, setCustomers, setStatus }) {
 
       const msg = `Hello ${user.name},
 
-We received a request to reset your Sparkle Gift Shop account password.
+        We received a request to reset your Sparkle Gift Shop account password.
 
-Please use the link below to set a new password:
-${resetLink}
+        Please use the link below to set a new password:
+        ${resetLink}
 
-This link is valid for 24 hours only.
+        This link is valid for 24 hours only.
 
-If you did not request this, please ignore this message.
+        If you did not request this, please ignore this message.
 
-Thank you,
-Sparkle Gift Shop Team`;
+        Thank you,
+        Sparkle Gift Shop Team`;
 
       // Find the user's phone number from their orders if possible, or we might need it in user model
       // For now, if we don't have user phone in model, let's try to get it if they have orders
@@ -1471,12 +1767,17 @@ function OwnerApp() {
   const filteredOrders = useMemo(() => {
     return orders
       .filter(o => {
+        // HIDE UPI orders if no screenshot is uploaded
+        // This effectively "drafts" them until the customer completes the flow
+        if (o.paymentMethod === 'upi' && !o.paymentScreenshot && !o.isPaid) {
+          return false;
+        }
+
         if (!orderFilterDate) return true;
         const oDate = new Date(o.createdAt).toDateString();
         const fDate = new Date(orderFilterDate).toDateString();
         return oDate === fDate;
       })
-
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [orders, orderFilterDate]);
 
@@ -1494,26 +1795,53 @@ function OwnerApp() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    const payload = { ...form, price: Number(form.price) };
+
+    // Close form immediately for better UX
+    setShowProductForm(false);
+    setStatus('Saving...');
+    setForm(emptyProduct); // Clear form early, can restore if error
+
     try {
+      let updatedProduct;
       if (editingId) {
-        await ownerUpdateProduct(editingId, { ...form, price: Number(form.price) });
-        setStatus('Updated');
+        // Optimistic Update for Edit
+        setProducts(prev => {
+          const next = prev.map(p => p.id === editingId ? { ...p, ...payload } : p);
+          localStorage.setItem('sparkle_owner_products', JSON.stringify(next));
+          return next;
+        });
+
+        updatedProduct = await ownerUpdateProduct(editingId, payload);
+        setStatus('Updated successfully');
+        setEditingId(null);
+
+        // Confirm with server response (optional consistency check could go here)
       } else {
-        await ownerCreateProduct({ ...form, price: Number(form.price) });
-        setStatus('Added');
+        // For add, we must wait for ID, but form is already closed so it feels faster
+        updatedProduct = await ownerCreateProduct(payload);
+        setStatus('Added new product');
+
+        setProducts(prev => {
+          const next = [updatedProduct, ...prev];
+          localStorage.setItem('sparkle_owner_products', JSON.stringify(next));
+          return next;
+        });
       }
-      setForm(emptyProduct);
-      setEditingId(null);
-      setShowProductForm(false);
-      setProducts(await ownerFetchProducts());
     } catch {
-      setStatus('Error');
+      setStatus('Error saving product');
+      // Ideally reopen form or show error alert here
+      if (editingId) setEditingId(null); // Reset
     }
   };
 
   const onEdit = (p) => {
     setEditingId(p.id);
-    setForm({ ...p, price: String(p.price) });
+    setForm({
+      ...p,
+      price: String(p.price),
+      comboItems: p.comboItems || []
+    });
     setShowProductForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -1563,22 +1891,39 @@ function OwnerApp() {
 
   const onDeleteOrder = async (id) => {
     if (!window.confirm("Are you sure you want to delete this invoice?")) return;
+
+    // Optimistic Delete
+    const prevOrders = orders;
+    setOrders(prev => prev.filter(o => o.id !== id));
+    setStatus('Deleting Invoice...');
+
     try {
       await ownerDeleteOrder(id);
-      setOrders(prev => prev.filter(o => o.id !== id));
       setStatus('Invoice deleted successfully');
     } catch {
+      setOrders(prevOrders); // Rollback
       setStatus('Error deleting Invoice');
     }
   };
 
   const onDelete = async (id) => {
     if (!window.confirm("Delete?")) return;
+
+    // Optimistic Update
+    const previousProducts = products;
+    setProducts(prev => {
+      const next = prev.filter(p => p.id !== id);
+      localStorage.setItem('sparkle_owner_products', JSON.stringify(next));
+      return next;
+    });
+
     try {
       await ownerDeleteProduct(id);
-      setProducts(prev => prev.filter(p => p.id !== id));
+      setStatus('Deleted');
     } catch {
       setStatus('Failed to delete product');
+      setProducts(previousProducts); // Revert on failure
+      localStorage.setItem('sparkle_owner_products', JSON.stringify(previousProducts));
     }
   };
 
@@ -1587,6 +1932,7 @@ function OwnerApp() {
     try {
       const next = await ownerUpdateSettings(settings);
       setSettings(next);
+      localStorage.setItem('sparkle_owner_settings', JSON.stringify(next));
       setStatus('Saved');
     } catch {
       setStatus('Error');
@@ -1618,46 +1964,46 @@ function OwnerApp() {
     const paymentStatus = order.isPaid ? 'CONFIRMED' : 'PENDING';
 
     const msg = `*SPARKLE GIFT SHOP*
------------------
-Order Confirmation
+        -----------------
+        Order Confirmation
 
-Hello *${order.customerName}*,
+        Hello *${order.customerName}*,
 
-${order.isPaid ? 'Your payment has been received and your order is confirmed!' : 'Thank you for your order. Please complete payment to confirm.'}
+        ${order.isPaid ? 'Your payment has been received and your order is confirmed!' : 'Thank you for your order. Please complete payment to confirm.'}
 
-*Order Details:*
------------------
-Invoice: ${order.invoiceId}
-Date: ${new Date(order.createdAt).toLocaleDateString('en-IN')}
+        *Order Details:*
+        -----------------
+        Invoice: ${order.invoiceId}
+        Date: ${new Date(order.createdAt).toLocaleDateString('en-IN')}
 
-*Delivery Address:*
------------------
-${order.customerName}
-${order.phone}
-${order.address || 'N/A'}
+        *Delivery Address:*
+        -----------------
+        ${order.customerName}
+        ${order.phone}
+        ${order.address || 'N/A'}
 
-*Items Ordered:*
------------------
-${itemsList}
+        *Items Ordered:*
+        -----------------
+        ${itemsList}
 
-*Payment Summary:*
------------------
-Subtotal: Rs.${order.subtotal?.toFixed(2) || order.total?.toFixed(2)}
-${order.discount > 0 ? `Discount: -Rs.${order.discount}\n` : ''}Delivery: ${deliveryStr}
-*Total: Rs.${order.total?.toFixed(2)}*
+        *Payment Summary:*
+        -----------------
+        Subtotal: Rs.${order.subtotal?.toFixed(2) || order.total?.toFixed(2)}
+        ${order.discount > 0 ? `Discount: -Rs.${order.discount}\n` : ''}Delivery: ${deliveryStr}
+        *Total: Rs.${order.total?.toFixed(2)}*
 
-Payment Method: ${order.paymentMethod?.toUpperCase()}
-Payment Status: *${paymentStatus}*
+        Payment Method: ${order.paymentMethod?.toUpperCase()}
+        Payment Status: *${paymentStatus}*
 
-${order.isPaid ? 'Your order will be dispatched soon. We will update you with tracking details.' : 'Please complete payment to process your order.'}
+        ${order.isPaid ? 'Your order will be dispatched soon. We will update you with tracking details.' : 'Please complete payment to process your order.'}
 
-Track your order:
-${window.location.origin}/order-details/${order.invoiceId}
+        Track your order:
+        ${window.location.origin}/order-details/${order.invoiceId}
 
-For any queries, reply to this message.
+        For any queries, reply to this message.
 
-Thank you for shopping with us!
-*Sparkle Gift Shop*`;
+        Thank you for shopping with us!
+        *Sparkle Gift Shop*`;
 
     window.open(`https://wa.me/${targetPhone}?text=${encodeURIComponent(msg)}`, '_blank');
   };
@@ -1699,6 +2045,7 @@ Thank you for shopping with us!
             {[
               { id: 'orders', icon: 'bi-cart-check', label: 'Orders' },
               { id: 'products', icon: 'bi-box-seam', label: 'Products' },
+              { id: 'combos', icon: 'bi-gift', label: 'Combo Store' },
               { id: 'customers', icon: 'bi-person-badge', label: 'Customers' },
               { id: 'coupons', icon: 'bi-ticket-perforated', label: 'Coupons' },
               { id: 'teams', icon: 'bi-people', label: 'Teams' },
@@ -1724,9 +2071,13 @@ Thank you for shopping with us!
             )}
             {isRefreshing && <div className="spinner-border spinner-border-sm text-primary opacity-50 ms-2" role="status"></div>}
           </div>
-          {tab === 'products' && !showProductForm && (
-            <button className="btn btn-primary rounded-pill px-4" onClick={() => { setForm(emptyProduct); setShowProductForm(true); setEditingId(null); }}>
-              Add New
+          {(tab === 'products' || tab === 'combos') && !showProductForm && (
+            <button className="btn btn-primary rounded-pill px-4" onClick={() => {
+              setForm({ ...emptyProduct, isCombo: tab === 'combos', category: tab === 'combos' ? 'Combos' : '' });
+              setShowProductForm(true);
+              setEditingId(null);
+            }}>
+              Add {tab === 'combos' ? 'Combo' : 'Product'}
             </button>
           )}
         </div>
@@ -1738,9 +2089,9 @@ Thank you for shopping with us!
               <div className="spinner-border text-primary" role="status"></div>
               <p className="mt-2 text-muted">Loading your store data...</p>
             </div>
-          ) : tab === 'products' && (
+          ) : (tab === 'products' || tab === 'combos') && (
             <>
-              {showProductForm && <ProductForm form={form} setForm={setForm} onSubmit={onSubmit} editing={!!editingId} onCancel={() => { setShowProductForm(false); setEditingId(null); }} />}
+              {showProductForm && <ProductForm form={form} setForm={setForm} onSubmit={onSubmit} editing={!!editingId} products={products} onCancel={() => { setShowProductForm(false); setEditingId(null); }} />}
 
               <div className="card shadow-sm border-0 mb-4 bg-white" style={{ borderRadius: '16px' }}>
                 <div className="card-body p-2">
@@ -1758,13 +2109,19 @@ Thank you for shopping with us!
               </div>
 
               <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xl-6 g-3 mb-5">
-                {products.filter(p => !query || p.name.toLowerCase().includes(query.toLowerCase())).map(p => (
+                {products.filter(p => {
+                  const matchQuery = !query || p.name.toLowerCase().includes(query.toLowerCase());
+                  if (tab === 'combos') return matchQuery && (p.isCombo || p.category === 'Combos');
+                  if (tab === 'products') return matchQuery && !p.isCombo && p.category !== 'Combos';
+                  return false;
+                }).slice(0, query ? 200 : 50).map(p => (
                   <div className="col" key={p.id}>
                     <div className="card h-100 border-0 shadow-sm overflow-hidden" style={{ borderRadius: '16px' }}>
                       <div className="position-relative bg-light" style={{ aspectRatio: '1/1', overflow: 'hidden' }}>
                         <img
                           src={p.image || logo}
                           alt={p.name}
+                          loading="lazy"
                           className="w-100 h-100 object-fit-contain"
                           style={{ backgroundColor: '#f8f9fa' }}
                         />
@@ -1786,10 +2143,15 @@ Thank you for shopping with us!
                             <i className="bi bi-trash3-fill text-danger" style={{ fontSize: '12px' }}></i>
                           </button>
                         </div>
-                        <div className="position-absolute top-0 start-0 m-2">
+                        <div className="position-absolute top-0 start-0 m-2 d-flex flex-column gap-1">
                           <span className="badge bg-white text-dark shadow-sm border fw-bold" style={{ fontSize: '10px' }}>
                             {p.category}
                           </span>
+                          {p.isCombo && (
+                            <span className="badge bg-warning text-dark shadow-sm border-0 fw-bold" style={{ fontSize: '9px' }}>
+                              <i className="bi bi-stars me-1"></i>COMBO
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="card-body p-3">
@@ -1800,6 +2162,17 @@ Thank you for shopping with us!
                             <span className="smallest text-muted font-monospace" style={{ fontSize: '10px' }}>{p.id}</span>
                           </div>
                         </div>
+                        {p.isCombo && p.comboItems && p.comboItems.length > 0 && (
+                          <div className="mt-2 p-1 bg-light rounded border">
+                            <div className="smallest fw-bold text-primary text-uppercase mb-1" style={{ fontSize: '7px' }}>Items:</div>
+                            {p.comboItems.map((ci, idx) => (
+                              <div key={idx} className="smallest text-muted text-truncate d-flex justify-content-between" style={{ fontSize: '9px' }}>
+                                <span>• {ci.name} x{ci.quantity}</span>
+                                <span className="fw-bold">₹{ci.price || 0}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         {p.variants && p.variants.length > 0 && (
                           <div className="d-flex align-items-center gap-1 mt-2">
                             <i className="bi bi-layers text-muted smallest"></i>
@@ -1816,13 +2189,17 @@ Thank you for shopping with us!
                       <i className="bi bi-box-seam display-1 text-light mb-3"></i>
                       <h4 className="fw-bold text-muted">Zero Inventory</h4>
                       <p className="text-muted small">Ready to start selling? Add your first product.</p>
-                      <button type="button" className="btn btn-primary rounded-pill px-4 mt-2 fw-bold" onClick={() => { setForm(emptyProduct); setShowProductForm(true); }}>Add Product</button>
+                      <button type="button" className="btn btn-primary rounded-pill px-4 mt-2 fw-bold" onClick={() => {
+                        setForm({ ...emptyProduct, isCombo: tab === 'combos', category: tab === 'combos' ? 'Combos' : '' });
+                        setShowProductForm(true);
+                      }}>Add {tab === 'combos' ? 'Combo' : 'Product'}</button>
                     </div>
                   </div>
                 )}
               </div>
             </>
           )}
+
 
           {tab === 'orders' && (
             <>
@@ -1838,14 +2215,29 @@ Thank you for shopping with us!
                       <h4 className="fw-bold mb-0 text-primary">₹{filteredOrders.reduce((sum, o) => sum + (o.total || 0), 0).toFixed(2)}</h4>
                     </div>
                   </div>
+
                   <div className="ms-auto d-flex align-items-center gap-2">
-                    <span className="small fw-bold text-muted text-uppercase">Filter by Date:</span>
+                    <span className="small fw-bold text-muted text-uppercase">Page Size:</span>
+                    <select
+                      className="form-select form-select-sm w-auto shadow-none border"
+                      onChange={(e) => {
+                        // Placeholder for page size logic
+                      }}
+                      defaultValue="50"
+                    >
+                      <option value="20">20</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                    </select>
+                    <span className="small fw-bold text-muted text-uppercase ms-2">Filter by Date:</span>
                     <input type="date" className="form-control form-control-sm w-auto shadow-none border" value={orderFilterDate} onChange={e => setOrderFilterDate(e.target.value)} />
                   </div>
                 </div>
               </div>
+
               <OrdersList
-                orders={filteredOrders}
+                orders={filteredOrders.slice(0, 50)}
+                products={products}
                 onWhatsApp={onWhatsAppCustomer}
                 onDeleteOrder={onDeleteOrder}
                 onToggleDispatch={onToggleDispatch}
@@ -1853,6 +2245,11 @@ Thank you for shopping with us!
                 onToggleDelivered={onToggleDelivered}
                 onPreview={setPreviewImg}
               />
+              {filteredOrders.length > 50 && (
+                <div className="text-center mt-3 mb-5">
+                  <p className="text-muted small">Showing recent 50 of {filteredOrders.length} orders. Use date filter to see specific days.</p>
+                </div>
+              )}
             </>
           )}
 
@@ -1862,38 +2259,40 @@ Thank you for shopping with us!
           {tab === 'teams' && <TeamsPanel admins={admins} setAdmins={setAdmins} />}
           {tab === 'customers' && <CustomersPanel customers={customers} setCustomers={setCustomers} setStatus={setStatus} />}
         </div>
-      </main>
+      </main >
 
       {/* Image Preview Modal */}
-      {previewImg && (
-        <div
-          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-2 p-md-4"
-          style={{ zIndex: 2000, background: 'rgba(0,0,0,0.9)' }}
-          onClick={() => setPreviewImg(null)}
-        >
-          <div className="position-relative" onClick={e => e.stopPropagation()}>
-            <button
-              className="btn btn-light btn-sm position-absolute top-0 end-0 m-2 rounded-circle shadow"
-              onClick={() => setPreviewImg(null)}
-              style={{ width: '36px', height: '36px', zIndex: 10 }}
-            >
-              <i className="bi bi-x-lg"></i>
-            </button>
-            <img
-              src={previewImg}
-              alt="Preview"
-              className="rounded shadow-lg"
-              style={{
-                maxWidth: '95vw',
-                maxHeight: '90vh',
-                objectFit: 'contain',
-                display: 'block'
-              }}
-            />
+      {
+        previewImg && (
+          <div
+            className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-2 p-md-4"
+            style={{ zIndex: 2000, background: 'rgba(0,0,0,0.9)' }}
+            onClick={() => setPreviewImg(null)}
+          >
+            <div className="position-relative" onClick={e => e.stopPropagation()}>
+              <button
+                className="btn btn-light btn-sm position-absolute top-0 end-0 m-2 rounded-circle shadow"
+                onClick={() => setPreviewImg(null)}
+                style={{ width: '36px', height: '36px', zIndex: 10 }}
+              >
+                <i className="bi bi-x-lg"></i>
+              </button>
+              <img
+                src={previewImg}
+                alt="Preview"
+                className="rounded shadow-lg"
+                style={{
+                  maxWidth: '95vw',
+                  maxHeight: '90vh',
+                  objectFit: 'contain',
+                  display: 'block'
+                }}
+              />
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 }
 

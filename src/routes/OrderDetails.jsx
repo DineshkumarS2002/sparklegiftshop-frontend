@@ -14,15 +14,17 @@ export default function OrderDetails() {
         let socket;
         (async () => {
             try {
-                // Parallel load settings
-                const settingsPromise = clientFetchSettings();
-                setSettings(await settingsPromise);
+                // Parallel execution:
+                const settingsPromise = clientFetchSettings().then(s => {
+                    setSettings(s);
+                    return s;
+                }).catch(err => console.error("Settings error", err));
 
                 const token = localStorage.getItem('sparkle_token');
-                let orderData;
+                let orderPromise;
 
+                // Initialize Socket immediately (non-blocking)
                 try {
-                    // Initialize Socket for everyone
                     socket = io(getSocketURL(), { auth: { token } });
                     socket.emit('join_order', invoiceId);
                     socket.on('tracking_update', (updated) => {
@@ -30,31 +32,44 @@ export default function OrderDetails() {
                             setOrder(updated);
                         }
                     });
+                } catch (e) {
+                    console.error("Socket error", e);
+                }
 
-                    if (token) {
-                        // Try private route first
-                        orderData = await clientGetOrder(invoiceId);
-                        setOrder(orderData);
-                    } else {
-                        throw new Error('No token');
-                    }
-                } catch (err) {
-                    // Fallback to Public tracking
-                    const guestPhone = localStorage.getItem('sparkle_track_phone') || '';
+                if (token) {
+                    // Try private route
+                    orderPromise = clientGetOrder(invoiceId);
+                } else {
+                    // Public route fallback
+                    const guestPhone = localStorage.getItem('sparkle_track_phone');
                     if (guestPhone) {
-                        orderData = await clientTrackOrderPublic(invoiceId, guestPhone);
-                        setOrder(orderData);
+                        orderPromise = clientTrackOrderPublic(invoiceId, guestPhone);
                     } else {
-                        throw err; // Re-throw if no phone available to try public track
+                        throw new Error('No auth token or saved phone');
+                    }
+                }
+
+                // Wait for order data
+                try {
+                    const orderData = await orderPromise;
+                    setOrder(orderData);
+                } catch (err) {
+                    // If public fallback needed because token invalid or whatever, handle here
+                    // But simpler logic:
+                    if (!token && !localStorage.getItem('sparkle_track_phone')) {
+                        setError('For privacy, please track using your Phone Number first.');
+                    } else {
+                        console.error(err);
+                        if (err.response?.status === 401 || err.response?.status === 403) {
+                            setError('Verification failed. Please track by phone number to verify identity.');
+                        } else {
+                            setError('Order not found.');
+                        }
                     }
                 }
             } catch (err) {
                 console.error(err);
-                if (err.response?.status === 401 || err.response?.status === 403) {
-                    setError('Please enter your registered phone number on the track page to view this order.');
-                } else {
-                    setError('Order not found or you do not have permission to view it.');
-                }
+                if (!error) setError('Something went wrong');
             } finally {
                 setLoading(false);
             }
@@ -132,7 +147,7 @@ export default function OrderDetails() {
                                     <div className="d-flex gap-3 align-items-center">
                                         {/* Image */}
                                         <div className="flex-shrink-0" style={{ width: '60px', height: '60px' }}>
-                                            <img src={displayImg || 'https://via.placeholder.com/60'} alt="" className="w-100 h-100 object-fit-cover rounded-3" />
+                                            <img src={displayImg || 'https://placehold.co/60'} alt="" className="w-100 h-100 object-fit-cover rounded-3" />
                                         </div>
 
                                         {/* Content */}

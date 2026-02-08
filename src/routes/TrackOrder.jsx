@@ -46,7 +46,7 @@ export default function TrackOrder() {
                         setOrders([data]);
                         if (data.phone) localStorage.setItem('sparkle_track_phone', data.phone);
                     } else {
-                        setError('For your privacy, please track using your registered Phone Number first to save it, or Sign In.');
+                        setError('To view this order securely, please enter your Phone Number in the search box first.');
                     }
                 }
             } else if (term.length >= 10 && !isNaN(term.replace(/\s/g, ''))) {
