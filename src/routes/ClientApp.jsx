@@ -598,8 +598,7 @@ export default function ClientApp() {
   /* Delivery Fee Logic */
   const deliveryFee =
     cart.total === 0 ? 0 :
-      cart.total < 499 ? 99 :
-        cart.total < 999 ? 49 : 0;
+      cart.total < 100 ? 99 : 0;
   const finalTotal = Math.max(0, (cart.total - discount) + deliveryFee);
 
   const onCheckout = () => {
@@ -703,7 +702,7 @@ export default function ClientApp() {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          🚚 {deliveryFee === 0 ? 'FREE Delivery on your order!' : `Add ₹${(deliveryFee === 49 ? 999 : 499) - cart.total} more for cheaper delivery!`}
+          🚚 {deliveryFee === 0 ? 'FREE Delivery on your order!' : `Add ₹${100 - cart.total} more for FREE delivery!`}
         </div>
 
         {/* Header & Cart Toggle */}

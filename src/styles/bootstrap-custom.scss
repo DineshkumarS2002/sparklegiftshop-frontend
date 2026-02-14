@@ -1,0 +1,58 @@
+// Custom Bootstrap Build - Import only what we use
+// This reduces Bootstrap CSS from ~200KB to ~50KB
+
+// 1. Include functions first
+@import 'bootstrap/scss/functions';
+
+// 2. Custom variables (override Bootstrap defaults)
+$primary: #d946ef;
+$secondary: #8b5cf6;
+$body-bg: #fdf4ff;
+$body-color: #1e293b;
+$font-family-base: 'Outfit', system-ui, sans-serif;
+$border-radius: 1rem;
+$border-radius-sm: 0.5rem;
+$border-radius-lg: 1.5rem;
+$border-radius-pill: 50rem;
+
+// 3. Include required Bootstrap files
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/variables-dark';
+@import 'bootstrap/scss/maps';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/utilities';
+
+// 4. Layout & components we actually use
+@import 'bootstrap/scss/root';
+@import 'bootstrap/scss/reboot';
+@import 'bootstrap/scss/type';
+@import 'bootstrap/scss/images';
+@import 'bootstrap/scss/containers';
+@import 'bootstrap/scss/grid';
+
+// 5. Components (only import what you use)
+@import 'bootstrap/scss/tables';
+@import 'bootstrap/scss/forms';
+@import 'bootstrap/scss/buttons';
+@import 'bootstrap/scss/transitions';
+@import 'bootstrap/scss/dropdown';
+@import 'bootstrap/scss/nav';
+@import 'bootstrap/scss/navbar';
+@import 'bootstrap/scss/card';
+@import 'bootstrap/scss/badge';
+@import 'bootstrap/scss/alert';
+@import 'bootstrap/scss/list-group';
+@import 'bootstrap/scss/close';
+@import 'bootstrap/scss/modal';
+@import 'bootstrap/scss/offcanvas';
+@import 'bootstrap/scss/spinners';
+
+// 6. Helpers
+@import 'bootstrap/scss/helpers';
+
+// 7. Utilities
+@import 'bootstrap/scss/utilities/api';
+
+// NOT importing (saves ~80KB):
+// - Accordion, Breadcrumb, Button group, Carousel, Pagination, 
+// - Popover, Progress, Toasts, Tooltip, etc.

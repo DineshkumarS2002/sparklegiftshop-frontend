@@ -6,32 +6,104 @@
   <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
   <meta name="google-site-verification" content="googlea52b6d69f940e030" />
   <link rel="canonical" href="https://sparklegiftshop.netlify.app/" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+
+  <!-- Preconnect to external domains for faster font and image loading -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
-    rel="stylesheet">
+  <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+  <!-- Optimized font loading - only 3 weights instead of 5, with font-display swap -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sparkle Gift Shop | Unique Personalized Gifts & Birthday Gift Ideas TN</title>
+
+  <!-- Critical CSS - Inlined for instant first paint on mobile -->
+  <style>
+    :root {
+      --bs-primary: #d946ef;
+      --bs-body-bg: #fdf4ff
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%);
+      min-height: 100vh;
+      overflow-x: hidden
+    }
+
+    #root {
+      min-height: 100vh
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, .05);
+      border-radius: 1rem
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #d946ef 0%, #c026d3 100%);
+      border: none;
+      color: #fff;
+      padding: .75rem 1.5rem;
+      border-radius: 50px;
+      font-weight: 600
+    }
+
+    img {
+      max-width: 100%;
+      height: auto
+    }
+
+    .spinner-border {
+      display: inline-block;
+      width: 3rem;
+      height: 3rem;
+      vertical-align: text-bottom;
+      border: .25em solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: spinner-border .75s linear infinite
+    }
+
+    @keyframes spinner-border {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+  </style>
+
+  <title>Sparkle Gift Shop | Personalized Gifts, Birthday Gifts & Custom Gift Items Tamil Nadu</title>
   <meta name="description"
-    content="Looking for unique birthday gifts for your boyfriend, girlfriend, husband, or wife? Sparkle Gift Shop offers personalized mugs, keychains, and photo lamps with fast delivery all over Tamil Nadu. Best gift shop near you for anniversaries and special moments." />
+    content="Sparkle Gift Shop - Tamil Nadu's #1 online gift store for personalized birthday gifts, anniversary gifts, combo packs & custom photo gifts. Fast delivery across Chennai, Coimbatore, Madurai, Salem & all TN cities. Order unique gifts for boyfriend, girlfriend, husband, wife & loved ones. Same day delivery available!" />
   <meta name="keywords"
-    content="birthday gifts for husband, unique gifts for wife, personalized gifts for boyfriend, best gift for girlfriend, wedding anniversary gift ideas, photo mug printing near me, custom keychains online, gift shop near me tamil nadu, Sparkle Gift Shop, piranthanal parisu ideas" />
-  <meta name="author" content="Sparkle Gift Shop" />
-  <meta name="robots" content="index, follow" />
+    content="gift shop tamil nadu, sparkle gift shop, personalized gifts online, birthday gifts for boyfriend, birthday gifts for girlfriend, birthday gifts for husband, birthday gifts for wife, anniversary gifts, wedding gifts, valentine gifts, photo gifts, custom mugs, personalized keychains, photo lamps, gift combos, gift hampers, birthday gift ideas, unique gifts, handmade gifts, gift shop near me, gift delivery tamil nadu, gift shop chennai, gift shop coimbatore, gift shop madurai, gift shop salem, piranthanal parisu, anniversary parisu, kadhal dhinam parisu, thirumanam parisu, photo mug printing, custom photo frames, personalized gifts chennai, gift items online, best gift shop, online gift store india, tamil nadu gift delivery, same day gift delivery, express gift delivery, gift shop online, birthday surprise gifts, romantic gifts, couple gifts, friendship gifts, farewell gifts, return gifts, corporate gifts, personalized cakes, flower delivery, chocolate gifts, combo offers, gift sets, premium gifts, luxury gifts, affordable gifts, budget gifts, gift ideas for him, gift ideas for her, best gifts for parents, gifts for friends, gifts for family, customized gifts, name printed gifts, photo printed gifts, engraved gifts, handcrafted gifts, unique gift ideas, creative gifts, surprise gifts, special occasion gifts, festival gifts, diwali gifts, christmas gifts, new year gifts, rakhi gifts, mothers day gifts, fathers day gifts, valentines day gifts, propose day gifts, hug day gifts, kiss day gifts, promise day gifts, teddy day gifts, rose day gifts, chocolate day gifts, gift vouchers, gift cards, gift wrapping, free shipping gifts, cash on delivery gifts, upi payment gifts, secure payment gifts, trusted gift shop, verified gift store, customer reviews gifts, 5 star rated gifts, trending gifts, popular gifts, bestselling gifts, new arrival gifts, exclusive gifts, limited edition gifts, seasonal gifts, occasion based gifts, age specific gifts, gender specific gifts, relationship based gifts, interest based gifts, hobby based gifts, profession based gifts, personalized by occasion, bulk order gifts, wholesale gifts, gift shop tamilnadu, gift shop tn, sparkle gifts, sparklegiftshop" />
+  <meta name="author" content="Sparkle Gift Shop - Tamil Nadu" />
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+  <meta name="googlebot" content="index, follow" />
+  <meta name="language" content="English, Tamil" />
+  <meta name="geo.region" content="IN-TN" />
+  <meta name="geo.placename" content="Tamil Nadu, India" />
+  <meta name="geo.position" content="11.1271;78.6569" />
+  <meta name="ICBM" content="11.1271, 78.6569" />
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://sparklegiftshop.netlify.app/" />
-  <meta property="og:title" content="Sparkle Gift Shop | Personalized Gifts & Handcrafted Treasures" />
+  <meta property="og:title" content="Sparkle Gift Shop | #1 Personalized Gifts & Birthday Gifts Tamil Nadu" />
   <meta property="og:description"
-    content="Shop unique and personalized gifts at Sparkle Gift Shop. Transform your memories into beautiful gifts." />
+    content="Tamil Nadu's most trusted online gift store! Order personalized birthday gifts, anniversary gifts, photo mugs, custom keychains & gift combos. Fast delivery across Chennai, Coimbatore, Madurai & all TN. Same day delivery available!" />
   <meta property="og:image" content="/favicon.jpg" />
+  <meta property="og:site_name" content="Sparkle Gift Shop" />
+  <meta property="og:locale" content="en_IN" />
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image" />
-  <meta property="twitter:title" content="Sparkle Gift Shop | Personalized Gifts" />
+  <meta property="twitter:url" content="https://sparklegiftshop.netlify.app/" />
+  <meta property="twitter:title" content="Sparkle Gift Shop | Personalized Gifts Tamil Nadu" />
   <meta property="twitter:description"
-    content="Handcrafted personalized gifts delivered to your doorstep. Explore our collection." />
+    content="Shop unique personalized gifts, birthday gifts & custom photo gifts. Fast delivery across Tamil Nadu. Order now for same day delivery!" />
+  <meta property="twitter:image" content="/favicon.jpg" />
 
   <!-- Structured Data for SEO -->
   <script type="application/ld+json">
@@ -39,14 +111,50 @@
     "@context": "https://schema.org",
     "@type": "Store",
     "name": "Sparkle Gift Shop",
-    "description": "Unique handcrafted and personalized gifts for all occasions.",
+    "alternateName": "Sparkle Gifts",
+    "description": "Tamil Nadu's #1 online gift store offering personalized birthday gifts, anniversary gifts, custom photo gifts, gift combos and handcrafted items with fast delivery across all TN cities.",
     "url": "https://sparklegiftshop.netlify.app/",
     "telephone": "+91 6381830479",
+    "email": "sparklegiftshop@gmail.com",
+    "image": "https://sparklegiftshop.netlify.app/favicon.jpg",
+    "priceRange": "₹₹",
     "address": {
       "@type": "PostalAddress",
       "addressCountry": "IN",
-      "addressRegion": "Tamil Nadu"
+      "addressRegion": "Tamil Nadu",
+      "addressLocality": "Tamil Nadu"
     },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "11.1271",
+      "longitude": "78.6569"
+    },
+    "areaServed": [
+      {
+        "@type": "State",
+        "name": "Tamil Nadu"
+      },
+      {
+        "@type": "City",
+        "name": "Chennai"
+      },
+      {
+        "@type": "City",
+        "name": "Coimbatore"
+      },
+      {
+        "@type": "City",
+        "name": "Madurai"
+      },
+      {
+        "@type": "City",
+        "name": "Salem"
+      },
+      {
+        "@type": "City",
+        "name": "Trichy"
+      }
+    ],
     "openingHoursSpecification": {
       "@type": "OpeningHoursSpecification",
       "dayOfWeek": [
@@ -55,10 +163,54 @@
         "Wednesday",
         "Thursday",
         "Friday",
-        "Saturday"
+        "Saturday",
+        "Sunday"
       ],
       "opens": "09:00",
       "closes": "21:00"
+    },
+    "paymentAccepted": ["UPI", "Cash", "Online Payment"],
+    "currenciesAccepted": "INR",
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Gift Products",
+      "itemListElement": [
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Product",
+            "name": "Personalized Photo Mugs"
+          }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Product",
+            "name": "Custom Keychains"
+          }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Product",
+            "name": "Photo Lamps"
+          }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Product",
+            "name": "Gift Combo Packs"
+          }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Product",
+            "name": "Personalized Frames"
+          }
+        }
+      ]
     }
   }
   </script>
