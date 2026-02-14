@@ -8,6 +8,7 @@ import {
   ownerFetchOrders,
   ownerFetchProducts,
   ownerFetchReportPdf,
+  ownerFetchReportExcel,
   ownerFetchReportSummary,
   ownerFetchSettings,
   ownerUpdateProduct,
@@ -1025,7 +1026,7 @@ function OrdersList({ orders, products = [], onWhatsApp, onDeleteOrder, onToggle
   );
 }
 
-function ReportsPanel({ range, setRange, data, onDownload, productData, reportUrl }) {
+function ReportsPanel({ range, setRange, data, onDownload, onDownloadExcel, productData, reportUrl }) {
   // Calculate aggregate stats for the current view
   const { totalRevenue, totalOrders } = useMemo(() => {
     return data.reduce((acc, curr) => ({
@@ -1129,9 +1130,9 @@ function ReportsPanel({ range, setRange, data, onDownload, productData, reportUr
                 <button className="btn bg-white text-primary fw-bold flex-grow-1 shadow-sm" onClick={onDownload}>
                   <i className="bi bi-file-earmark-pdf-fill me-2"></i>PDF Report
                 </button>
-                <a href={`${API_BASE_URL}/admin/reports/export?format=xlsx`} target="_blank" className="btn btn-outline-light fw-bold flex-grow-1">
+                <button className="btn btn-outline-light fw-bold flex-grow-1" onClick={() => onDownloadExcel()}>
                   <i className="bi bi-file-earmark-spreadsheet-fill me-2"></i>Excel
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -1950,6 +1951,15 @@ function OwnerApp() {
     a.click();
   };
 
+  const downloadExcel = async () => {
+    const blob = await ownerFetchReportExcel(range);
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sales-${range}.xlsx`;
+    a.click();
+  };
+
   const onWhatsAppCustomer = (order) => {
     const phone = order.phone?.replace(/\D/g, '');
     const targetPhone = phone?.length === 10 ? '91' + phone : phone;
@@ -2254,7 +2264,7 @@ function OwnerApp() {
           )}
 
           {tab === 'coupons' && <CouponsPanel coupons={coupons} setCoupons={setCoupons} products={products} />}
-          {tab === 'reports' && <ReportsPanel range={range} setRange={setRange} data={report} onDownload={downloadPdf} productData={productSales} reportUrl={settings.reportUrl} />}
+          {tab === 'reports' && <ReportsPanel range={range} setRange={setRange} data={report} onDownload={downloadPdf} onDownloadExcel={downloadExcel} productData={productSales} reportUrl={settings.reportUrl} />}
           {tab === 'settings' && <SettingsPanel settings={settings} setSettings={setSettings} onSave={onSaveSettings} saving={savingSettings} />}
           {tab === 'teams' && <TeamsPanel admins={admins} setAdmins={setAdmins} />}
           {tab === 'customers' && <CustomersPanel customers={customers} setCustomers={setCustomers} setStatus={setStatus} />}

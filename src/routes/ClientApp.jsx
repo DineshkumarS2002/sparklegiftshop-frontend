@@ -90,11 +90,24 @@ function ProductCard({ product, onAdd, isWishlisted, onWishlistToggle, setStatus
         )}
         <button
           type="button"
-          className="btn btn-light rounded-circle position-absolute top-0 end-0 m-3 shadow-sm border-0 d-flex align-items-center justify-content-center"
-          style={{ width: '32px', height: '32px', opacity: 0.9, zIndex: 2 }}
+          className="btn rounded-circle position-absolute top-0 end-0 m-3 border-0 d-flex align-items-center justify-content-center"
+          style={{
+            width: '38px',
+            height: '38px',
+            zIndex: 2,
+            background: 'transparent'
+          }}
           onClick={(e) => { e.stopPropagation(); onWishlistToggle(product.id); }}
         >
-          <i className={`bi ${isWishlisted ? 'bi-heart-fill text-danger' : 'bi-heart text-muted'}`}></i>
+          <i
+            className={`bi ${isWishlisted ? 'bi-heart-fill text-danger' : 'bi-heart'}`}
+            style={{
+              fontSize: '22px',
+              color: isWishlisted ? '#dc3545' : '#fff',
+              filter: 'drop-shadow(0 0 2px rgba(255,255,255,0.5))',
+
+            }}
+          ></i>
         </button>
       </div>
 
@@ -600,7 +613,7 @@ export default function ClientApp() {
   /* Delivery Fee Logic */
   const deliveryFee =
     cart.total === 0 ? 0 :
-      cart.total < 100 ? 99 : 0;
+      cart.total < 999 ? 50 : 0;
   const finalTotal = Math.max(0, (cart.total - discount) + deliveryFee);
 
   const onCheckout = () => {
@@ -1229,8 +1242,8 @@ export default function ClientApp() {
                           </div>
                         ))
                       ) : (
-                        <div className="col-12 text-center py-5">
-                          <div className="bg-light rounded-circle p-4 d-inline-block mb-3">
+                        <div className="text-center py-5">
+                          <div className="d-inline-block mb-3">
                             <i className={`bi ${wishlistOnly ? 'bi-heart' : 'bi-search'} text-muted fs-1`}></i>
                           </div>
                           <h5 className="fw-bold">{wishlistOnly ? 'Your Wishlist is Empty' : 'No Products Found'}</h5>

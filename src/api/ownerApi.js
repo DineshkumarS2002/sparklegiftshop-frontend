@@ -48,6 +48,8 @@ export const ownerUpdateOrderTracking = (id, payload) => api.patch(`/admin/order
 
 export const ownerFetchReportPdf = (range) =>
   api.get('/admin/reports/export', { params: { range, format: 'pdf' }, responseType: 'blob' }).then((r) => r.data);
+export const ownerFetchReportExcel = (range) =>
+  api.get('/admin/reports/export', { params: { range, format: 'xlsx' }, responseType: 'blob' }).then((r) => r.data);
 export const ownerFetchReportSummary = (range) =>
   api.get('/admin/reports/summary', { params: { range } }).then((r) => r.data);
 
