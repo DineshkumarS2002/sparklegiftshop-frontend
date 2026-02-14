@@ -282,6 +282,26 @@ body {
   font-size: 0.65rem;
 }
 
+/* Admin Responsive Utilities */
+.admin-header-logo {
+  width: 72px;
+  height: 72px;
+}
+
+.admin-header-title {
+  font-size: 1.75rem;
+}
+
+.admin-logout-btn {
+  min-width: 54px;
+  height: 54px;
+  padding: 0 1.5rem;
+}
+
+.admin-sticky-offset {
+  top: 88px;
+}
+
 /* Offcanvas */
 .offcanvas {
   background-color: #fff;
@@ -337,4 +357,155 @@ body {
 
 .h-pill {
   border-radius: 50px !important;
+}
+
+/* Mobile Optimization Scoped Block */
+@media (max-width: 575.98px) {
+  .card-body {
+    padding: 0.75rem !important;
+  }
+
+  .card-header {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .btn {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.85rem !important;
+  }
+
+  .form-control,
+  .form-select {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.85rem !important;
+  }
+
+  .premium-input-group {
+    padding: 0 0.25rem !important;
+  }
+
+  h1,
+  .h1 {
+    font-size: 1.5rem !important;
+  }
+
+  h2,
+  .h2 {
+    font-size: 1.25rem !important;
+  }
+
+  h3,
+  .h3 {
+    font-size: 1.15rem !important;
+  }
+
+  h4,
+  .h4 {
+    font-size: 1.05rem !important;
+  }
+
+  h5,
+  .h5 {
+    font-size: 0.95rem !important;
+  }
+
+  h6,
+  .h6 {
+    font-size: 0.85rem !important;
+  }
+
+  .container-fluid {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  /* Specific Product Card Adjustments */
+  .card-body h6 {
+    font-size: 0.8rem !important;
+    margin-bottom: 2px !important;
+  }
+
+  .card-body .fw-extrabold.text-primary {
+    font-size: 0.95rem !important;
+  }
+
+  .card-body .smallest {
+    font-size: 8px !important;
+  }
+
+  .badge {
+    padding: 0.2rem 0.5rem !important;
+    font-size: 7px !important;
+  }
+
+  .bg-light.p-3 {
+    padding: 0.75rem !important;
+  }
+
+  /* Table Adjustments for Mobile */
+  .table td,
+  .table th {
+    padding: 0.75rem 0.5rem !important;
+    font-size: 0.8rem !important;
+  }
+
+  .table .btn-sm {
+    padding: 0.25rem 0.4rem !important;
+  }
+
+  .navbar {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+    min-height: 56px !important;
+  }
+
+  .admin-header-logo {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .admin-header-title {
+    font-size: 1rem !important;
+  }
+
+  .admin-logout-btn {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+    min-width: 40px !important;
+  }
+
+  .admin-sticky-offset {
+    top: 56px !important;
+  }
+
+  /* Specific Adjustments for Product Grid Cards (Medium size) */
+  .mobile-medium-card .card-body {
+    padding: 0.65rem !important;
+  }
+
+  .mobile-medium-card h6 {
+    font-size: 0.75rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-medium-card .fw-extrabold.text-primary {
+    font-size: 0.9rem !important;
+  }
+
+  .mobile-medium-card .btn-white.btn-sm {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .mobile-medium-card .btn-white.btn-sm i {
+    font-size: 10px !important;
+  }
+
+  .mobile-medium-card .badge {
+    font-size: 6.5px !important;
+    padding: 0.2rem 0.4rem !important;
+  }
 }

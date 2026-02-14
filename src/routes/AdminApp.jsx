@@ -87,15 +87,20 @@ function ProductForm({ form, setForm, onSubmit, editing, onCancel, products }) {
   const previewImage = form.image || 'https://placehold.co/200?text=No+Image';
 
   return (
-    <div className="card border-0 shadow-sm mb-5">
-      <div className="card-header bg-white py-4 border-0 d-flex justify-content-between align-items-center">
-        <div>
-          <h4 className="mb-1 fw-extrabold text-dark tracking-tight">{editing ? 'Edit Product' : 'New Arrival'}</h4>
-          <p className="text-muted small mb-0 fw-medium">Curate your inventory with style.</p>
+    <div className="card border-0 shadow-lg mb-5" style={{ borderRadius: '1.5rem', overflow: 'hidden' }}>
+      <div className="card-header bg-white py-4 px-4 px-lg-5 shadow-sm border-0 d-flex justify-content-between align-items-center">
+        <div className="d-flex align-items-center gap-3">
+          <div className="bg-primary bg-opacity-10 p-3 rounded-4">
+            <i className={`bi ${editing ? 'bi-pencil-square' : 'bi-plus-circle-fill'} fs-4 text-primary`}></i>
+          </div>
+          <div>
+            <h4 className="mb-0 fw-extrabold text-dark tracking-tight">{editing ? 'Modify Masterpiece' : 'Craft New Entry'}</h4>
+            <p className="text-muted smallest mb-0 fw-bold text-uppercase tracking-widest opacity-75">Inventory Management</p>
+          </div>
         </div>
         {editing && (
-          <button className="btn btn-light text-danger fw-bold btn-sm shadow-sm border px-3 rounded-pill" onClick={onCancel}>
-            <i className="bi bi-x-lg me-1"></i> Cancel
+          <button className="btn btn-light-danger fw-bold btn-sm shadow-sm border-0 px-4 py-2 rounded-pill" onClick={onCancel}>
+            <i className="bi bi-x-lg me-1"></i> Cancel Edit
           </button>
         )}
       </div>
@@ -565,189 +570,137 @@ function ProductForm({ form, setForm, onSubmit, editing, onCancel, products }) {
 
 function SettingsPanel({ settings, setSettings, onSave, saving }) {
   return (
-    <div className="row justify-content-center pb-5">
-      <div className="col-12 col-md-10 col-lg-8 col-xl-7">
+    <div className="row pb-5 animate-fade-in">
+      <div className="col-12">
 
-        <div className="card border-0 shadow-sm overflow-hidden mb-4" style={{ borderRadius: '1rem' }}>
-          <div className="card-header bg-white py-3 px-4 border-bottom">
-            <h6 className="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
-              <i className="bi bi-shop text-primary"></i> Store Profile
-            </h6>
+        {/* Header Section */}
+        <div className="d-flex align-items-center gap-3 mb-4 px-2">
+          <div className="bg-primary bg-opacity-10 p-3 rounded-4">
+            <i className="bi bi-sliders fs-3 text-primary"></i>
           </div>
-          <div className="card-body p-4">
-            <div className="row g-4">
-              <div className="col-md-12">
-                <div className="d-flex align-items-center gap-4">
-                  <div className="position-relative group" style={{ width: 100, height: 100 }}>
-                    <div className="w-100 h-100 rounded-circle overflow-hidden position-relative border border-2 border-dashed border-secondary">
+          <div>
+            <h3 className="fw-extrabold text-dark mb-0">System Configuration</h3>
+            <p className="text-muted smallest fw-bold text-uppercase tracking-widest mb-0 opacity-75">Global Shop Settings</p>
+          </div>
+        </div>
+
+        <div className="row g-4">
+          <div className="col-md-7">
+            {/* Store Profile Card */}
+            <div className="card border-0 shadow-sm overflow-hidden mb-4 h-100" style={{ borderRadius: '1.5rem' }}>
+              <div className="card-header bg-white py-4 px-4 border-bottom border-light">
+                <h6 className="fw-extrabold text-dark mb-0 d-flex align-items-center gap-2">
+                  <i className="bi bi-shop text-primary"></i> Store Identity
+                </h6>
+              </div>
+              <div className="card-body p-4">
+                <div className="d-flex flex-column align-items-center text-center mb-4">
+                  <div className="position-relative mb-3" style={{ width: 140, height: 140 }}>
+                    <div className="w-100 h-100 rounded-circle overflow-hidden border-4 border-white shadow-lg">
                       <img
-                        src={settings.logoUrl || 'https://placehold.co/100?text=Logo'}
+                        src={settings.logoUrl || 'https://placehold.co/140?text=Logo'}
                         alt="Logo"
                         className="w-100 h-100 object-fit-cover bg-light"
                       />
-                      <label
-                        className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-flex align-items-center justify-content-center transition-all"
-                        style={{ cursor: 'pointer' }}
-                        title="Upload Logo"
-                      >
-                        <i className="bi bi-camera-fill text-white fs-4"></i>
-                        <input
-                          type="file"
-                          className="d-none"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onloadend = () => {
-                                setSettings(s => ({ ...s, logoUrl: reader.result }));
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                        />
-                      </label>
+                    </div>
+                    <label
+                      className="position-absolute bottom-0 end-0 bg-primary text-white p-2 rounded-circle shadow-lg border border-2 border-white d-flex align-items-center justify-content-center hover-scale transition-all"
+                      style={{ cursor: 'pointer', width: '42px', height: '42px', zIndex: 5 }}
+                      title="Update Store Logo"
+                    >
+                      <i className="bi bi-camera-fill fs-6"></i>
+                      <input type="file" className="d-none" accept="image/*" onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => { setSettings(s => ({ ...s, logoUrl: reader.result })); };
+                          reader.readAsDataURL(file);
+                        }
+                      }} />
+                    </label>
+                  </div>
+                  <div className="w-100">
+                    <label className="form-label text-uppercase smallest fw-extrabold text-muted mb-2">Display Name</label>
+                    <input
+                      className="form-control form-control-lg fw-extrabold text-center rounded-pill border-2"
+                      value={settings.storeName || ''}
+                      onChange={(e) => setSettings(s => ({ ...s, storeName: e.target.value }))}
+                      placeholder="Enter Store Name"
+                    />
+                  </div>
+                </div>
+
+                <hr className="my-4 opacity-5" />
+
+                <div className="row g-3">
+                  <div className="col-12">
+                    <label className="form-label smallest fw-extrabold text-muted text-uppercase">WhatsApp Business</label>
+                    <div className="premium-input-group">
+                      <span className="btn text-success"><i className="bi bi-whatsapp"></i></span>
+                      <input className="form-control" value={settings.whatsappNumber || ''} onChange={e => setSettings(s => ({ ...s, whatsappNumber: e.target.value }))} placeholder="91..." />
                     </div>
                   </div>
-                  <div className="flex-grow-1">
-                    <label className="form-label">Store Name</label>
-                    <input
-                      className="form-control form-control-lg fw-bold text-dark"
-                      value={settings.storeName || 'Sparkle Gift Shop'}
-                      onChange={(e) => setSettings(s => ({ ...s, storeName: e.target.value }))}
-                    />
-                    <p className="text-muted smallest mt-1 mb-0 ms-3">This name will appear across your app and invoices.</p>
+                  <div className="col-12">
+                    <label className="form-label smallest fw-extrabold text-muted text-uppercase">UPI Merchant ID</label>
+                    <div className="premium-input-group">
+                      <span className="btn text-primary"><i className="bi bi-qr-code-scan"></i></span>
+                      <input className="form-control" value={settings.upiId || ''} onChange={e => setSettings(s => ({ ...s, upiId: e.target.value }))} placeholder="yourname@upi" />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="card border-0 shadow-sm overflow-hidden mb-4" style={{ borderRadius: '1rem' }}>
-          <div className="card-header bg-white py-3 px-4 border-bottom">
-            <h6 className="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
-              <i className="bi bi-stars text-warning"></i> Home Page Combo Banner
-            </h6>
-          </div>
-          <div className="card-body p-4 text-start">
-            <div className="row g-4">
-              <div className="col-12">
-                <div className="form-check form-switch mb-3">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    id="bannerActive"
-                    checked={settings.comboBannerActive}
-                    onChange={(e) => setSettings(s => ({ ...s, comboBannerActive: e.target.checked }))}
-                  />
-                  <label className="form-check-label fw-bold" htmlFor="bannerActive">Show Offer Banner on Home Page</label>
+          <div className="col-md-5">
+            {/* Promo Banner Card */}
+            <div className="card border-0 shadow-sm overflow-hidden mb-4" style={{ borderRadius: '1.5rem' }}>
+              <div className="card-header bg-white py-4 px-4 border-bottom border-light">
+                <h6 className="fw-extrabold text-dark mb-0 d-flex align-items-center gap-2">
+                  <i className="bi bi-megaphone-fill text-warning"></i> Promotional Banner
+                </h6>
+              </div>
+              <div className="card-body p-4">
+                <div className="form-check form-switch mb-4 p-3 bg-light rounded-4 border d-flex align-items-center justify-content-between px-4">
+                  <label className="form-check-label fw-extrabold text-dark mb-0" htmlFor="bannerActive">Display Banner</label>
+                  <input className="form-check-input ms-0" type="checkbox" id="bannerActive" checked={settings.comboBannerActive} onChange={e => setSettings(s => ({ ...s, comboBannerActive: e.target.checked }))} style={{ width: 45, height: 22 }} />
                 </div>
-              </div>
-              <div className="col-md-12">
-                <label className="form-label">Banner Main Title</label>
-                <input
-                  className="form-control"
-                  value={settings.comboBannerTitle || ''}
-                  onChange={(e) => setSettings(s => ({ ...s, comboBannerTitle: e.target.value }))}
-                  placeholder="e.g. Exclusive Combo Stores"
-                />
-              </div>
-              <div className="col-md-12">
-                <label className="form-label">Banner Description</label>
-                <textarea
-                  className="form-control"
-                  rows={2}
-                  value={settings.comboBannerSub || ''}
-                  onChange={(e) => setSettings(s => ({ ...s, comboBannerSub: e.target.value }))}
-                  placeholder="Small text below title..."
-                />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label">Discount Text Badge</label>
-                <input
-                  className="form-control"
-                  value={settings.comboBannerDiscount || ''}
-                  onChange={(e) => setSettings(s => ({ ...s, comboBannerDiscount: e.target.value }))}
-                  placeholder="e.g. Up to 30% OFF"
-                />
-              </div>
-            </div>
 
-            <div className="mt-4 pt-3 border-top">
-              <label className="smallest text-muted text-uppercase fw-bold mb-2 d-block">Live Preview</label>
-              <div className="rounded-4 overflow-hidden position-relative shadow-sm" style={{ height: '140px' }}>
-                <div className="position-absolute w-100 h-100" style={{ background: 'linear-gradient(135deg, #4338ca 0%, #6d28d9 100%)' }}></div>
-                <div className="position-absolute w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center p-3">
-                  <h5 className="fw-extrabold text-white mb-1 small">{settings.comboBannerTitle}</h5>
-                  <p className="text-white opacity-75 smallest mb-2">{settings.comboBannerSub}</p>
-                  <span className="badge bg-warning text-dark smallest rounded-pill fw-bold">{settings.comboBannerDiscount}</span>
+                <div className="mb-3">
+                  <label className="form-label smallest fw-extrabold text-muted text-uppercase">Headline</label>
+                  <input className="form-control rounded-3" value={settings.comboBannerTitle || ''} onChange={e => setSettings(s => ({ ...s, comboBannerTitle: e.target.value }))} />
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="card border-0 shadow-sm overflow-hidden mb-4" style={{ borderRadius: '1rem' }}>
-          <div className="card-header bg-white py-3 px-4 border-bottom">
-            <h6 className="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
-              <i className="bi bi-credit-card text-success"></i> Payment & Contact
-            </h6>
-          </div>
-          <div className="card-body p-4">
-            <div className="row g-4 text-start">
-              <div className="col-md-6">
-                <label className="form-label">WhatsApp Number</label>
-                <div className="input-group input-group-lg premium-input-group">
-                  <span className="btn text-success"><i className="bi bi-whatsapp"></i></span>
-                  <input
-                    className="form-control"
-                    value={settings.whatsappNumber || ''}
-                    onChange={(e) => setSettings(s => ({ ...s, whatsappNumber: e.target.value }))}
-                    placeholder="919876543210"
-                  />
+                <div className="mb-3">
+                  <label className="form-label smallest fw-extrabold text-muted text-uppercase">Description</label>
+                  <textarea className="form-control rounded-3" rows={2} value={settings.comboBannerSub || ''} onChange={e => setSettings(s => ({ ...s, comboBannerSub: e.target.value }))}></textarea>
                 </div>
-                <small className="text-muted smallest mt-1 d-block ms-3">This number will receive order alerts.</small>
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">UPI ID</label>
-                <div className="input-group input-group-lg premium-input-group">
-                  <span className="btn text-primary"><i className="bi bi-qr-code"></i></span>
-                  <input
-                    className="form-control"
-                    value={settings.upiId || ''}
-                    onChange={(e) => setSettings(s => ({ ...s, upiId: e.target.value }))}
-                    placeholder="username@upi"
-                  />
+                <div className="mb-4">
+                  <label className="form-label smallest fw-extrabold text-muted text-uppercase">Badge Text</label>
+                  <input className="form-control rounded-3" value={settings.comboBannerDiscount || ''} onChange={e => setSettings(s => ({ ...s, comboBannerDiscount: e.target.value }))} placeholder="e.g. 50% OFF" />
                 </div>
-                <small className="text-muted smallest mt-1 d-block ms-3">Used for generating payment QR codes.</small>
-              </div>
 
-              <div className="col-12">
-                <div className="alert alert-light border-0 d-flex gap-3 align-items-start rounded-3">
-                  <i className="bi bi-shield-check text-primary fs-4"></i>
-                  <div>
-                    <h6 className="fw-bold text-dark mb-1">Secure Configuration</h6>
-                    <p className="mb-0 small text-muted">Your payment details are stored securely and only used to generate QR codes for customers. No transactions are processed directly on this server.</p>
+                <div className="rounded-4 overflow-hidden position-relative shadow-sm" style={{ height: '120px' }}>
+                  <div className="position-absolute inset-0 bg-gradient-brand"></div>
+                  <div className="position-absolute inset-0 d-flex flex-column align-items-center justify-content-center text-center p-3 text-white">
+                    <h6 className="fw-extrabold mb-1">{settings.comboBannerTitle || 'Headline'}</h6>
+                    <p className="smallest opacity-80 mb-2">{settings.comboBannerSub || 'Subtitle'}</p>
+                    <span className="badge bg-white text-primary rounded-pill fw-extrabold px-3 py-1" style={{ fontSize: '10px' }}>{settings.comboBannerDiscount || 'OFFER'}</span>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Footer Actions */}
-        <div className="d-flex justify-content-end pt-2">
-          <button
-            className="btn btn-primary px-5 py-3 shadow-lg d-flex align-items-center gap-2 h-pill"
-            onClick={onSave}
-            disabled={saving}
-            style={{ minWidth: '200px', justifyContent: 'center' }}
-          >
-            {saving ? <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> : <i className="bi bi-check2-circle"></i>}
-            {saving ? 'Saving...' : 'Save Changes'}
-          </button>
+            {/* Save Button */}
+            <button
+              className="btn btn-primary w-100 py-4 shadow-lg border-0 d-flex align-items-center justify-content-center gap-2 h-pill fw-extrabold"
+              onClick={onSave}
+              disabled={saving}
+              style={{ fontSize: '1.1rem' }}
+            >
+              {saving ? <span className="spinner-border spinner-border-sm"></span> : <i className="bi bi-cloud-check-fill fs-4"></i>}
+              {saving ? 'UPDATING...' : 'COMMIT CHANGES'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -758,7 +711,7 @@ function OrdersList({ orders, products = [], onWhatsApp, onDeleteOrder, onToggle
   const navigate = useNavigate();
   if (!orders || orders.length === 0) return <div className="text-center p-5 text-muted">No orders found.</div>;
   return (
-    <div className="row g-3">
+    <div className="row g-2">
       {orders.map((o) => {
         const subtotal = o.subtotal || 0;
         const discount = o.discount || 0;
@@ -783,72 +736,84 @@ function OrdersList({ orders, products = [], onWhatsApp, onDeleteOrder, onToggle
                   </button>
                 </div>
 
-                {/* Status Badges Row */}
-                <div className="d-flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className={`btn btn-sm py-2 px-3 rounded-pill fw-bold border-0 ${o.dispatched ? 'bg-success text-white' : 'bg-warning text-dark'}`}
-                    onClick={() => onToggleDispatch(o.id, o.dispatched)}
-                    style={{ fontSize: '11px' }}
-                    title="Toggle Dispatch Status"
-                  >
-                    <i className={`bi ${o.dispatched ? 'bi-truck' : 'bi-clock-history'} me-1`}></i>
-                    {o.dispatched ? 'DISPATCHED' : 'PENDING'}
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn btn-sm py-2 px-3 rounded-pill fw-bold border-0 ${o.isPaid ? 'bg-success text-white' : 'bg-success bg-opacity-75 text-white'}`}
-                    onClick={() => onTogglePayment(o.id, o.isPaid)}
-                    style={{ fontSize: '11px' }}
-                    title="Toggle Payment Status"
-                  >
-                    <i className={`bi ${o.isPaid ? 'bi-check-circle-fill' : 'bi-x-circle-fill'} me-1`}></i>
-                    {o.isPaid ? 'PAID' : 'UNPAID'}
-                  </button>
-                  <span
-                    className="badge bg-light text-dark border px-3 py-2"
-                    style={{ fontSize: '11px' }}
-                  >
-                    <i className={`bi ${o.paymentMethod === 'cod' ? 'bi-cash' : 'bi-qr-code-scan'} me-1`}></i>
-                    {o.paymentMethod === 'cod' ? 'COD' : 'UPI'}
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn-sm py-2 px-3 rounded-pill fw-bold border-0 bg-info text-white"
-                    onClick={() => navigate(`/admin/tracking/${o.id}`)}
-                    style={{ fontSize: '11px' }}
-                    title="Update Tracking Details"
-                  >
-                    <i className="bi bi-geo-alt-fill me-1"></i> TRACK
-                  </button>
+                {/* Status Badges Row - Perfectly Aligned 2x2 Grid */}
+                <div className="row g-1 pt-2 mt-auto">
+                  <div className="col-6">
+                    <button
+                      type="button"
+                      className={`btn btn-sm w-100 py-2 rounded-pill fw-bold border-0 transition-all ${o.dispatched ? 'bg-success text-white' : 'bg-warning text-dark'} shadow-sm`}
+                      onClick={() => onToggleDispatch(o.id, o.dispatched)}
+                      style={{ fontSize: '10px' }}
+                    >
+                      <div className="d-flex align-items-center justify-content-center gap-1">
+                        <i className={`bi ${o.dispatched ? 'bi-truck' : 'bi-clock-history'}`}></i>
+                        <span className="text-uppercase">PENDING</span>
+                      </div>
+                    </button>
+                  </div>
+
+                  <div className="col-6">
+                    <button
+                      type="button"
+                      className={`btn btn-sm w-100 py-2 rounded-pill fw-bold border-0 transition-all ${o.isPaid ? 'bg-success text-white' : 'bg-success bg-opacity-50 text-white'} shadow-sm`}
+                      onClick={() => onTogglePayment(o.id, o.isPaid)}
+                      style={{ fontSize: '10px' }}
+                    >
+                      <div className="d-flex align-items-center justify-content-center gap-1">
+                        <i className={`bi ${o.isPaid ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}`}></i>
+                        <span className="text-uppercase">UNPAID</span>
+                      </div>
+                    </button>
+                  </div>
+
+                  <div className="col-6">
+                    <div className="bg-light w-100 h-100 py-2 rounded-pill border d-flex align-items-center justify-content-center text-dark fw-bold shadow-sm" style={{ fontSize: '10px', minHeight: '34px' }}>
+                      <div className="d-flex align-items-center gap-1">
+                        <i className={`bi ${o.paymentMethod === 'cod' ? 'bi-cash' : 'bi-qr-code-scan'} text-muted`}></i>
+                        <span className="text-uppercase">{o.paymentMethod?.toUpperCase()}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-6">
+                    <button
+                      type="button"
+                      className="btn btn-sm w-100 py-2 rounded-pill fw-bold border-0 bg-info text-white shadow-sm transition-all"
+                      onClick={() => navigate(`/admin/tracking/${o.id}`)}
+                      style={{ fontSize: '10px' }}
+                    >
+                      <div className="d-flex align-items-center justify-content-center gap-1">
+                        <i className="bi bi-geo-alt-fill"></i>
+                        <span className="text-uppercase">TRACK</span>
+                      </div>
+                    </button>
+                  </div>
                 </div>
 
               </div>
               {/* Card Body */}
-              <div className="card-body d-flex flex-column p-3">
+              <div className="card-body d-flex flex-column p-2">
                 {/* Payment Screenshot Section */}
                 {o.paymentScreenshot ? (
-                  <div className="mb-3 p-2 bg-light rounded border">
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <span className="fw-bold text-dark" style={{ fontSize: '11px' }}>
-                        <i className="bi bi-image-fill me-1 text-primary"></i> Payment Proof
+                  <div className="mb-3 p-2 bg-white rounded-4 border shadow-sm">
+                    <div className="d-flex justify-content-between align-items-center mb-2 px-1">
+                      <span className="fw-bold text-dark text-uppercase tracking-wider" style={{ fontSize: '9px' }}>
+                        <i className="bi bi-shield-check text-success me-1"></i> Payment Proof
                       </span>
-                      <span className="badge bg-success text-white rounded-pill" style={{ fontSize: '9px' }}>
-                        <i className="bi bi-check-circle-fill me-1"></i>Verified
-                      </span>
+                      <span className="badge bg-success-subtle text-success border border-success border-opacity-10 rounded-pill" style={{ fontSize: '8px' }}>VERIFIED</span>
                     </div>
                     <div
-                      className="position-relative overflow-hidden rounded border border-2 border-success shadow-sm"
-                      style={{ cursor: 'pointer', height: '100px', width: '100px' }}
+                      className="position-relative overflow-hidden rounded-3 border-2 border-primary border-opacity-10 shadow-sm mx-auto"
+                      style={{ cursor: 'pointer', height: '120px', width: '100%', maxWidth: '240px' }}
                       onClick={() => onPreview(o.paymentScreenshot)}
                     >
                       <img
                         src={o.paymentScreenshot}
                         alt="Payment Proof"
-                        className="w-100 h-100 object-fit-cover"
+                        className="w-100 h-100 object-fit-cover transition-all hover-scale"
                       />
-                      <div className="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white text-center py-1" style={{ fontSize: '10px' }}>
-                        <i className="bi bi-zoom-in me-1"></i> Click to Zoom
+                      <div className="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white text-center py-1" style={{ fontSize: '9px' }}>
+                        <i className="bi bi-zoom-in me-1"></i> Click to Verify Reference
                       </div>
                     </div>
                   </div>
@@ -862,7 +827,7 @@ function OrdersList({ orders, products = [], onWhatsApp, onDeleteOrder, onToggle
                 )}
 
                 {/* Customer Info Section - Chat Style */}
-                <div className="mb-3 p-3 bg-light rounded-4 border-0">
+                <div className="mb-2 p-2 bg-light rounded-4 border-0">
                   <div className="d-flex align-items-center gap-2 mb-2">
                     <div className="bg-white p-1 rounded-circle shadow-sm d-flex align-items-center justify-content-center" style={{ width: '30px', height: '30px' }}>
                       <i className="bi bi-person-fill text-primary"></i>
@@ -893,7 +858,7 @@ function OrdersList({ orders, products = [], onWhatsApp, onDeleteOrder, onToggle
               )}
 
               {/* Order Items Section */}
-              <div className="mb-3 flex-grow-1">
+              <div className="mb-2 flex-grow-1">
                 <div className="d-flex align-items-center justify-content-between mb-2">
                   <p className="fw-bold text-dark mb-0" style={{ fontSize: '12px' }}>
                     <i className="bi bi-bag-check-fill me-1 text-primary"></i> Order Items
@@ -918,47 +883,44 @@ function OrdersList({ orders, products = [], onWhatsApp, onDeleteOrder, onToggle
                     const comboProduct = products.find(p => p.id === i.productId) || i.product;
 
                     return (
-                      <div className="card border shadow-sm mb-2 p-2 rounded-3" key={idx}>
-                        <div className="d-flex gap-3 align-items-center">
+                      <div className="card border-0 bg-white shadow-sm mb-2 p-3 rounded-4" key={idx}>
+                        <div className="d-flex gap-3 align-items-start">
                           {/* Image */}
-                          <div className="flex-shrink-0" style={{ width: '50px', height: '50px' }}>
-                            <img src={displayImg || 'https://placehold.co/50'} alt="" className="w-100 h-100 object-fit-cover rounded-3" />
+                          <div className="flex-shrink-0" style={{ width: '60px', height: '60px' }}>
+                            <img src={displayImg || 'https://placehold.co/60'} alt="" className="w-100 h-100 object-fit-cover rounded-3 shadow-sm" />
                           </div>
 
                           {/* Content */}
-                          <div className="flex-grow-1 min-w-0">
-                            <h6 className="mb-1 text-truncate fw-bold text-dark" style={{ fontSize: '13px' }}>
+                          <div className="flex-grow-1 min-w-0 pe-2">
+                            <h6 className="mb-1 text-dark fw-bold pe-1" style={{ fontSize: '13px', lineHeight: '1.4' }}>
                               {i.product?.name || `Product ${i.productId}`}
                             </h6>
 
                             {/* Variants */}
-                            <div className="d-flex align-items-center gap-2 mb-1">
+                            <div className="d-flex flex-wrap align-items-center gap-1 mb-1">
                               {i.variantSize && (
-                                <span className="badge bg-secondary bg-opacity-10 text-dark border px-2 py-0" style={{ fontSize: '9px', borderRadius: '4px' }}>
+                                <span className="badge bg-light text-dark border px-2 py-1" style={{ fontSize: '9px', borderRadius: '4px' }}>
                                   {i.variantSize}
                                 </span>
                               )}
                               {i.variantColor && (
                                 <span
-                                  className="border rounded-circle d-inline-block"
-                                  style={{ width: '14px', height: '14px', backgroundColor: i.variantColor, flexShrink: 0 }}
+                                  className="border rounded-circle shadow-sm"
+                                  style={{ width: '12px', height: '12px', backgroundColor: i.variantColor, flexShrink: 0 }}
                                 ></span>
                               )}
-                            </div>
-
-                            <div className="text-muted fw-medium" style={{ fontSize: '11px' }}>
-                              ₹{i.variantPrice || i.product?.price} × {i.quantity}
+                              <span className="text-muted smallest ms-1">₹{i.variantPrice || i.product?.price} × {i.quantity}</span>
                             </div>
 
                             {/* Combo Items Display */}
                             {comboProduct?.isCombo && comboProduct?.comboItems?.length > 0 && (
                               <div className="mt-2 pt-2 border-top border-dashed">
-                                <div className="smallest text-muted text-uppercase fw-bold mb-1" style={{ fontSize: '10px', letterSpacing: '0.5px' }}>Includes:</div>
+                                <div className="smallest text-muted text-uppercase fw-bold mb-1" style={{ fontSize: '9px', letterSpacing: '0.5px' }}>Includes:</div>
                                 {comboProduct.comboItems.map((ci, cidx) => (
-                                  <div key={cidx} className="d-flex align-items-start mb-1" style={{ fontSize: '11px' }}>
+                                  <div key={cidx} className="d-flex align-items-start mb-1" style={{ fontSize: '10px' }}>
                                     <span className="text-secondary me-2">•</span>
                                     <span className="text-dark opacity-75 flex-grow-1 lh-sm">{ci.name}</span>
-                                    <span className="badge bg-light text-secondary border ms-2" style={{ fontSize: '9px', fontWeight: '600' }}>x{ci.quantity}</span>
+                                    <span className="badge bg-light text-secondary border ms-2" style={{ fontSize: '8px' }}>x{ci.quantity}</span>
                                   </div>
                                 ))}
                               </div>
@@ -966,8 +928,10 @@ function OrdersList({ orders, products = [], onWhatsApp, onDeleteOrder, onToggle
                           </div>
 
                           {/* Total */}
-                          <div className="fw-bold text-primary text-end" style={{ fontSize: '13px' }}>
-                            ₹{i.lineTotal?.toFixed(0)}
+                          <div className="flex-shrink-0 text-end ms-1">
+                            <div className="fw-extrabold text-primary" style={{ fontSize: '15px' }}>
+                              ₹{i.lineTotal?.toFixed(0)}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -999,21 +963,21 @@ function OrdersList({ orders, products = [], onWhatsApp, onDeleteOrder, onToggle
                     <span className="text-dark fw-semibold" style={{ fontSize: '13px' }}>Total Amount</span>
                     <span className="h4 fw-bold mb-0 text-primary">₹{o.total?.toFixed(2)}</span>
                   </div>
-                  <div className="d-flex gap-2">
+                  <div className="d-flex flex-column flex-sm-row gap-2 mt-2">
                     <Link
                       to={`/client/order/${o.invoiceId}/label`}
                       target="_blank"
-                      className="btn btn-primary btn-sm rounded-pill shadow-sm flex-grow-1 fw-bold"
+                      className="btn btn-primary btn-sm rounded-pill shadow-sm flex-grow-1 fw-bold py-2"
                       style={{ fontSize: '11px' }}
                     >
                       <i className="bi bi-printer-fill me-1"></i> PRINT LABEL
                     </Link>
                     <button
-                      className="btn btn-success btn-sm rounded-pill shadow-sm fw-bold"
+                      className="btn btn-success btn-sm rounded-pill shadow-sm flex-grow-1 fw-bold py-2"
                       onClick={() => onWhatsApp(o)}
-                      style={{ fontSize: '11px', minWidth: '80px' }}
+                      style={{ fontSize: '11px' }}
                     >
-                      <i className="bi bi-whatsapp me-1"></i> WhatsApp
+                      <i className="bi bi-whatsapp me-1"></i> WHATSAPP
                     </button>
                   </div>
                 </div>
@@ -1069,19 +1033,19 @@ function ReportsPanel({ range, setRange, data, onDownload, onDownloadExcel, prod
   return (
     <div className="animate-fade-in pb-5">
       {/* Header & Controls */}
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-5">
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-4 mb-5 p-4 bg-white rounded-4 shadow-sm border border-light">
         <div>
-          <h3 className="fw-extrabold text-dark mb-1 tracking-tight">Business Insights</h3>
-          <p className="text-muted small fw-medium mb-0">Track your growth and performance.</p>
+          <h2 className="fw-extrabold text-dark mb-1 tracking-tight" style={{ fontSize: '1.75rem' }}>Business Intelligence</h2>
+          <p className="text-muted small fw-medium mb-0">Real-time performance metrics and sales trends</p>
         </div>
 
-        <div className="d-flex align-items-center gap-2 bg-white p-1 rounded-pill shadow-sm border">
+        <div className="d-flex align-items-center gap-2 bg-light p-1.5 rounded-pill border">
           {['daily', 'monthly', 'yearly'].map(id => (
             <button
               key={id}
-              className={`btn btn-sm rounded-pill fw-bold px-3 transition-all ${range === id ? 'btn-dark' : 'btn-white text-muted hover-bg-light'}`}
+              className={`btn btn-sm rounded-pill fw-bold px-4 py-2 transition-all border-0 ${range === id ? 'btn-primary shadow-sm' : 'text-muted hover-bg-white'}`}
               onClick={() => setRange(id)}
-              style={{ textTransform: 'capitalize' }}
+              style={{ textTransform: 'capitalize', fontSize: '12px' }}
             >
               {id}
             </button>
@@ -1092,45 +1056,52 @@ function ReportsPanel({ range, setRange, data, onDownload, onDownloadExcel, prod
       {/* KPI Cards */}
       <div className="row g-4 mb-5">
         <div className="col-md-6 col-lg-4">
-          <div className="card border-0 shadow-sm overflow-hidden h-100 position-relative group">
-            <div className="position-absolute top-0 end-0 p-3 opacity-10">
-              <i className="bi bi-currency-rupee display-1 text-primary"></i>
-            </div>
-            <div className="card-body p-4 position-relative z-1">
-              <h6 className="text-uppercase fw-bold text-muted small tracking-wider mb-2">Total Revenue</h6>
-              <h2 className="fw-extrabold text-dark mb-0">₹{totalRevenue.toLocaleString()}</h2>
-              <span className="badge bg-success-subtle text-success border border-success border-opacity-10 mt-2">
-                <i className="bi bi-graph-up-arrow me-1"></i> {range} view
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-6 col-lg-4">
-          <div className="card border-0 shadow-sm overflow-hidden h-100 position-relative group">
-            <div className="position-absolute top-0 end-0 p-3 opacity-10">
-              <i className="bi bi-bag-check display-1 text-info"></i>
-            </div>
-            <div className="card-body p-4 position-relative z-1">
-              <h6 className="text-uppercase fw-bold text-muted small tracking-wider mb-2">Total Orders</h6>
-              <h2 className="fw-extrabold text-dark mb-0">{totalOrders}</h2>
-              <span className="badge bg-info-subtle text-info border border-info border-opacity-10 mt-2">
-                <i className="bi bi-people me-1"></i> {range} view
-              </span>
+          <div className="card border-0 shadow-sm overflow-hidden h-100 position-relative" style={{ borderRadius: '1.5rem', background: 'linear-gradient(135deg, #ffffff 0%, #fdf4ff 100%)' }}>
+            <div className="card-body p-4">
+              <div className="d-flex justify-content-between align-items-start mb-3">
+                <div className="bg-primary bg-opacity-10 p-3 rounded-4">
+                  <i className="bi bi-currency-rupee fs-3 text-primary"></i>
+                </div>
+                <span className="badge bg-success-subtle text-success border border-success border-opacity-10 rounded-pill px-2 py-1" style={{ fontSize: '10px' }}>
+                  <i className="bi bi-arrow-up-right me-1"></i>Active
+                </span>
+              </div>
+              <h6 className="text-uppercase fw-bold text-muted smallest tracking-widest mb-1">Total Revenue</h6>
+              <h2 className="fw-extrabold text-dark mb-0" style={{ fontSize: '2rem' }}>₹{totalRevenue.toLocaleString()}</h2>
+              <p className="smallest text-muted mt-2 mb-0">Total collection for the {range} period</p>
             </div>
           </div>
         </div>
-        <div className="col-md-12 col-lg-4">
-          <div className="card border-0 shadow-sm h-100 bg-primary text-white overflow-hidden position-relative">
-            {/* Decoration */}
-            <div className="position-absolute top-0 start-0 w-100 h-100 bg-gradient-opacity"></div>
 
+        <div className="col-md-6 col-lg-4">
+          <div className="card border-0 shadow-sm overflow-hidden h-100 position-relative" style={{ borderRadius: '1.5rem', background: 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)' }}>
+            <div className="card-body p-4">
+              <div className="d-flex justify-content-between align-items-start mb-3">
+                <div className="bg-info bg-opacity-10 p-3 rounded-4">
+                  <i className="bi bi-bag-check fs-3 text-info"></i>
+                </div>
+                <span className="badge bg-info-subtle text-info border border-info border-opacity-10 rounded-pill px-2 py-1" style={{ fontSize: '10px' }}>
+                  <i className="bi bi-cart3 me-1"></i>Confirmed
+                </span>
+              </div>
+              <h6 className="text-uppercase fw-bold text-muted smallest tracking-widest mb-1">Order Volume</h6>
+              <h2 className="fw-extrabold text-dark mb-0" style={{ fontSize: '2rem' }}>{totalOrders}</h2>
+              <p className="smallest text-muted mt-2 mb-0">Successful transactions processed</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-12 col-lg-4">
+          <div className="card border-0 shadow-sm h-100 bg-dark text-white overflow-hidden position-relative" style={{ borderRadius: '1.5rem' }}>
+            <div className="position-absolute top-0 start-0 w-100 h-100 bg-gradient-dark opacity-50"></div>
             <div className="card-body p-4 d-flex flex-column justify-content-center align-items-start position-relative z-1">
-              <h5 className="fw-bold mb-3">Downloads & Exports</h5>
+              <h5 className="fw-bold mb-3 text-white">Export Intelligence</h5>
+              <p className="smallest text-white text-opacity-75 mb-4">Download comprehensive reports for offline accounting and analysis.</p>
               <div className="d-flex flex-wrap gap-2 w-100">
-                <button className="btn bg-white text-primary fw-bold flex-grow-1 shadow-sm" onClick={onDownload}>
-                  <i className="bi bi-file-earmark-pdf-fill me-2"></i>PDF Report
+                <button className="btn btn-primary fw-bold flex-grow-1 shadow-sm border-0 py-2.5 h-pill" onClick={onDownload}>
+                  <i className="bi bi-file-earmark-pdf-fill me-2"></i>PDF
                 </button>
-                <button className="btn btn-outline-light fw-bold flex-grow-1" onClick={() => onDownloadExcel()}>
+                <button className="btn btn-outline-light fw-bold flex-grow-1 py-2.5 h-pill" onClick={() => onDownloadExcel()}>
                   <i className="bi bi-file-earmark-spreadsheet-fill me-2"></i>Excel
                 </button>
               </div>
@@ -1142,10 +1113,15 @@ function ReportsPanel({ range, setRange, data, onDownload, onDownloadExcel, prod
       {/* Charts Section */}
       <div className="row g-4">
         <div className="col-lg-8">
-          <div className="card border-0 shadow-sm h-100 p-2">
+          <div className="card border-0 shadow-sm h-100 p-2" style={{ borderRadius: '1.5rem' }}>
             <div className="card-header bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-              <h5 className="fw-extrabold text-dark mb-0">Sales Trend</h5>
-              <i className="bi bi-bar-chart-fill text-muted"></i>
+              <div>
+                <h5 className="fw-extrabold text-dark mb-0">Revenue Analytics</h5>
+                <p className="smallest text-muted mb-0">Performance over time</p>
+              </div>
+              <div className="bg-light p-2 rounded-3">
+                <i className="bi bi-bar-chart-fill text-primary"></i>
+              </div>
             </div>
             <div className="card-body px-4 pb-4">
               <div style={{ height: 350 }}>
@@ -1159,15 +1135,15 @@ function ReportsPanel({ range, setRange, data, onDownload, onDownloadExcel, prod
                       tooltip: {
                         backgroundColor: '#000',
                         padding: 12,
-                        titleFont: { size: 13, weight: 'bold' },
-                        bodyFont: { size: 12 },
+                        titleFont: { size: 13, weight: 'bold', family: 'Outfit' },
+                        bodyFont: { size: 12, family: 'Outfit' },
                         cornerRadius: 8,
                         displayColors: false
                       }
                     },
                     scales: {
-                      x: { grid: { display: false }, ticks: { font: { family: 'Outfit', size: 11 } } },
-                      y: { grid: { color: '#f1f5f9' }, border: { display: false }, ticks: { font: { family: 'Outfit', size: 11 } } }
+                      x: { grid: { display: false }, ticks: { font: { family: 'Outfit', size: 11, weight: '600' } } },
+                      y: { grid: { color: '#f8fafc', drawBorder: false }, border: { display: false }, ticks: { font: { family: 'Outfit', size: 11 } } }
                     }
                   }}
                 />
@@ -1177,10 +1153,10 @@ function ReportsPanel({ range, setRange, data, onDownload, onDownloadExcel, prod
         </div>
 
         <div className="col-lg-4">
-          <div className="card border-0 shadow-sm h-100 p-2">
+          <div className="card border-0 shadow-sm h-100 p-2" style={{ borderRadius: '1.5rem' }}>
             <div className="card-header bg-white border-0 pt-4 px-4">
-              <h5 className="fw-extrabold text-dark mb-0">Top Categories</h5>
-              <p className="text-muted smallest mb-0">Revenue distribution</p>
+              <h5 className="fw-extrabold text-dark mb-0">Sales Mix</h5>
+              <p className="text-muted smallest mb-0">Category wise distribution</p>
             </div>
             <div className="card-body d-flex align-items-center justify-content-center position-relative">
               <div style={{ width: '100%', maxWidth: 280, height: 280 }}>
@@ -1189,15 +1165,14 @@ function ReportsPanel({ range, setRange, data, onDownload, onDownloadExcel, prod
                   options={{
                     maintainAspectRatio: false,
                     plugins: {
-                      legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, font: { size: 10, family: 'Outfit' } } }
+                      legend: { position: 'bottom', labels: { boxWidth: 8, usePointStyle: true, font: { size: 10, family: 'Outfit', weight: '600' }, padding: 15 } }
                     },
-                    cutout: '70%'
+                    cutout: '75%'
                   }}
                 />
-                {/* Center Text */}
                 <div className="position-absolute top-50 start-50 translate-middle text-center pointer-events-none">
-                  <span className="d-block text-muted smallest fw-bold text-uppercase">Total</span>
-                  <span className="d-block h4 fw-extrabold text-dark mb-0">{Object.keys(productData).length}</span>
+                  <span className="d-block text-muted smallest fw-bold text-uppercase tracking-widest">Total</span>
+                  <span className="d-block h3 fw-extrabold text-dark mb-0">{Object.keys(productData).length}</span>
                 </div>
               </div>
             </div>
@@ -1247,22 +1222,28 @@ function CouponsPanel({ coupons, setCoupons, products }) {
   };
 
   return (
-    <div className="row g-4 pb-5">
-      <div className="col-lg-5">
-        <div className="card border-0 shadow-sm animate-fade-in sticky-top" style={{ top: '160px', borderRadius: '1.25rem' }}>
-          <div className="card-header bg-white pt-4 pb-2 border-0 px-4">
-            <h4 className="fw-extrabold mb-1 text-dark">Create Coupon</h4>
-            <p className="text-muted small mb-0">Launch a new discount campaign</p>
+    <div className="row g-4 pb-5 animate-fade-in">
+      <div className="col-lg-4">
+        <div className="card border-0 shadow-lg sticky-top" style={{ top: '160px', borderRadius: '1.5rem', zIndex: 10 }}>
+          <div className="card-header bg-white py-4 px-4 border-0">
+            <div className="d-flex align-items-center gap-3">
+              <div className="bg-primary bg-opacity-10 p-2 rounded-3">
+                <i className="bi bi-ticket-perforated text-primary fs-4"></i>
+              </div>
+              <div>
+                <h5 className="fw-extrabold text-dark mb-0">Create Voucher</h5>
+                <p className="smallest text-muted mb-0">Engine new discount campaigns</p>
+              </div>
+            </div>
           </div>
           <div className="card-body px-4 pb-4">
             <form onSubmit={onSubmit}>
-              <div className="mb-4 text-start">
-                <label className="form-label">Coupon Code</label>
-                <div className="input-group input-group-lg premium-input-group">
-                  <span className="btn text-primary"><i className="bi bi-tag-fill"></i></span>
+              <div className="mb-4">
+                <label className="form-label text-uppercase smallest fw-extrabold text-muted tracking-widest">Coupon Code</label>
+                <div className="premium-input-group">
                   <input
-                    className="form-control text-uppercase fw-extrabold text-primary"
-                    placeholder="E.G. FESTIVE50"
+                    className="form-control text-uppercase fw-extrabold text-primary px-4"
+                    placeholder="FESTIVE50"
                     value={form.code}
                     onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))}
                     style={{ letterSpacing: '2px' }}
@@ -1271,129 +1252,102 @@ function CouponsPanel({ coupons, setCoupons, products }) {
                 </div>
               </div>
 
-              <div className="row g-3 mb-4 text-start">
-                <div className="col-6">
-                  <label className="form-label">Type</label>
-                  <select className="form-select" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
+              <div className="row g-3 mb-4">
+                <div className="col-7">
+                  <label className="form-label text-uppercase smallest fw-extrabold text-muted tracking-widest">Type</label>
+                  <select className="form-select rounded-pill px-3" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
                     <option value="percent">Percentage (%)</option>
                     <option value="flat">Fixed (₹)</option>
                   </select>
                 </div>
-                <div className="col-6">
-                  <label className="form-label">Value</label>
-                  <div className="input-group premium-input-group">
-                    <span className="btn text-muted px-2">{form.type === 'percent' ? '%' : '₹'}</span>
-                    <input type="number" className="form-control ps-0" placeholder="0" value={form.value} onChange={e => setForm(f => ({ ...f, value: e.target.value }))} required />
-                  </div>
+                <div className="col-5">
+                  <label className="form-label text-uppercase smallest fw-extrabold text-muted tracking-widest">Value</label>
+                  <input type="number" className="form-control rounded-pill px-3" placeholder="0" value={form.value} onChange={e => setForm(f => ({ ...f, value: e.target.value }))} required />
                 </div>
               </div>
 
-              <div className="mb-1 text-start">
-                <label className="form-label">Target Audience</label>
-                <div className="d-flex gap-2 mb-4">
-                  <button
-                    type="button"
-                    className={`btn btn-sm flex-grow-1 py-2 rounded-pill fw-bold transition-all ${form.applicableTo === 'all' ? 'btn-primary' : 'btn-light border'}`}
-                    onClick={() => setForm(f => ({ ...f, applicableTo: 'all', productIds: [] }))}
-                  >
-                    <i className="bi bi-globe2 me-2"></i>All Store
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn btn-sm flex-grow-1 py-2 rounded-pill fw-bold transition-all ${form.applicableTo === 'specific' ? 'btn-primary' : 'btn-light border'}`}
-                    onClick={() => setForm(f => ({ ...f, applicableTo: 'specific' }))}
-                  >
-                    <i className="bi bi-list-stars me-2"></i>Selective
-                  </button>
+              <div className="mb-4">
+                <label className="form-label text-uppercase smallest fw-extrabold text-muted tracking-widest">Applicability</label>
+                <div className="d-flex gap-2">
+                  <button type="button" className={`btn btn-sm flex-grow-1 py-2 rounded-pill fw-extrabold ${form.applicableTo === 'all' ? 'btn-primary shadow-sm' : 'btn-light border text-muted'}`} onClick={() => setForm(f => ({ ...f, applicableTo: 'all', productIds: [] }))}>UNIVERSAL</button>
+                  <button type="button" className={`btn btn-sm flex-grow-1 py-2 rounded-pill fw-extrabold ${form.applicableTo === 'specific' ? 'btn-primary shadow-sm' : 'btn-light border text-muted'}`} onClick={() => setForm(f => ({ ...f, applicableTo: 'specific' }))}>SPECIFIC</button>
                 </div>
+              </div>
 
-                {form.applicableTo === 'specific' && (
-                  <div className="border-0 rounded-4 p-3 bg-light shadow-inner mb-4 animate-fade-in" style={{ maxHeight: '250px', overflowY: 'auto' }}>
-                    <p className="smallest fw-bold text-muted text-uppercase mb-2">Select Products</p>
-                    {products.map(p => (
-                      <div key={p.id} className="d-flex align-items-center justify-content-between py-2 border-bottom border-white last-border-0">
-                        <div className="form-check m-0">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            role="button"
-                            id={`p-${p.id}`}
-                            checked={form.productIds.includes(p.id)}
-                            onChange={() => toggleProduct(p.id)}
-                          />
-                          <label className="form-check-label small fw-medium text-dark ms-2" htmlFor={`p-${p.id}`} role="button">
-                            {p.name}
-                          </label>
-                        </div>
-                        <span className="smallest text-primary fw-bold">₹{p.price}</span>
+              {form.applicableTo === 'specific' && (
+                <div className="rounded-4 p-3 bg-light border mb-4 no-scrollbar" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                  {products.map(p => (
+                    <div key={p.id} className="form-check p-2 mb-1 border-bottom border-white d-flex align-items-center justify-content-between">
+                      <div className="d-flex align-items-center gap-2">
+                        <input className="form-check-input" type="checkbox" checked={form.productIds.includes(p.id)} onChange={() => toggleProduct(p.id)} id={`cp-${p.id}`} />
+                        <label className="form-check-label smallest fw-bold text-dark" htmlFor={`cp-${p.id}`}>{p.name}</label>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      <span className="smallest text-primary fw-extrabold">₹{p.price}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-              <button className="btn btn-primary w-100 py-3 fw-extrabold shadow-lg rounded-pill mt-2" type="submit" disabled={loading}>
-                {loading ? <><span className="spinner-border spinner-border-sm me-2"></span>Processing...</> : 'ACTIVATE COUPON'}
+              <button className="btn btn-primary w-100 py-3 fw-extrabold rounded-pill shadow-lg mt-2 transition-all hover-scale" type="submit" disabled={loading}>
+                {loading ? 'CREATING...' : 'ACTIVATE REWARD'}
               </button>
             </form>
           </div>
         </div>
       </div>
 
-      <div className="col-lg-7">
-        <div className="card border-0 shadow-sm overflow-hidden h-100" style={{ borderRadius: '1.25rem' }}>
-          <div className="card-header bg-white pt-4 pb-3 border-0 px-4 d-flex justify-content-between align-items-center">
+      <div className="col-lg-8">
+        <div className="card shadow-sm border-0 bg-white overflow-hidden" style={{ borderRadius: '1.5rem' }}>
+          <div className="card-header bg-white py-4 px-4 border-0 d-flex justify-content-between align-items-center">
             <div>
-              <h4 className="fw-extrabold mb-1 text-dark">Active Campaigns</h4>
-              <p className="text-muted small mb-0">{coupons.length} coupons currently running</p>
+              <h5 className="fw-extrabold text-dark mb-0">Active Campaigns</h5>
+              <p className="smallest text-muted mb-0">{coupons.length} rewards in circulation</p>
             </div>
-            <div className="bg-primary bg-opacity-10 text-primary p-2 rounded-circle">
-              <i className="bi bi-ticket-perforated-fill fs-4"></i>
+            <div className="bg-light p-2 rounded-circle">
+              <i className="bi bi-tag-fill text-muted fs-5"></i>
             </div>
           </div>
-
-          <div className="px-4 pb-4">
-            {coupons.length === 0 ? (
-              <div className="text-center py-5 bg-light rounded-4 border-dashed border-2">
-                <i className="bi bi-ticket-detailed display-3 opacity-10 d-block mb-3"></i>
-                <h5 className="fw-bold text-muted">No Coupons Found</h5>
-                <p className="small text-muted mb-0">Create your first discount to get started!</p>
-              </div>
-            ) : (
-              <div className="row g-3">
-                {coupons.map(c => (
-                  <div key={c.id} className="col-12">
-                    <div className="card border shadow-none hover-shadow transition-all" style={{ borderRadius: '1rem' }}>
-                      <div className="card-body p-3">
-                        <div className="row align-items-center">
-                          <div className="col-auto">
-                            <div className="bg-primary text-white fw-extrabold p-3 rounded-3 d-flex align-items-center justify-content-center" style={{ width: 80, height: 65, fontSize: '0.9rem' }}>
-                              {c.type === 'percent' ? `${c.value}%` : `₹${c.value}`}
-                            </div>
-                          </div>
-                          <div className="col">
-                            <h5 className="fw-extrabold text-primary mb-1 tracking-wider">{c.code}</h5>
-                            <div className="d-flex gap-2">
-                              {c.applicableTo === 'all' ? (
-                                <span className="smallest badge bg-success-subtle text-success border border-success border-opacity-10 rounded-pill px-2">Universal Coupon</span>
-                              ) : (
-                                <span className="smallest badge bg-info-subtle text-info border border-info border-opacity-10 rounded-pill px-2">{c.productIds?.length || 0} Products Selected</span>
-                              )}
-                              <span className="smallest text-muted"><i className="bi bi-lightning-charge-fill me-1 text-warning"></i>Active</span>
-                            </div>
-                          </div>
-                          <div className="col-auto">
-                            <button className="btn btn-light-danger border-0 rounded-circle p-2" onClick={() => onDelete(c.id)} title="Delete Coupon">
-                              <i className="bi bi-trash3 text-danger fs-5"></i>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+          <div className="card-body p-0">
+            <div className="table-responsive">
+              <table className="table table-hover align-middle mb-0">
+                <thead className="bg-light">
+                  <tr>
+                    <th className="px-4 py-3 smallest text-uppercase fw-bold text-muted">Voucher Details</th>
+                    <th className="py-3 text-center smallest text-uppercase fw-bold text-muted">Benefit</th>
+                    <th className="py-3 text-center smallest text-uppercase fw-bold text-muted">Scope</th>
+                    <th className="px-4 py-3 text-end smallest text-uppercase fw-bold text-muted">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="border-0">
+                  {coupons.map(c => (
+                    <tr key={c.id}>
+                      <td className="px-4 py-3">
+                        <div className="fw-extrabold text-primary tracking-widest">{c.code}</div>
+                        <div className="smallest text-muted fw-bold">ID: {c.id.slice(-8).toUpperCase()}</div>
+                      </td>
+                      <td className="py-3 text-center">
+                        <span className="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 fw-extrabold border-0" style={{ fontSize: '12px' }}>
+                          {c.type === 'percent' ? `${c.value}% OFF` : `₹${c.value} FLAT`}
+                        </span>
+                      </td>
+                      <td className="py-3 text-center">
+                        <span className={`badge rounded-pill px-2 py-1 border-0 ${c.applicableTo === 'all' ? 'bg-info bg-opacity-10 text-info' : 'bg-warning bg-opacity-10 text-warning'}`} style={{ fontSize: '9px', fontWeight: '800' }}>
+                          {c.applicableTo === 'all' ? 'GLOBAL' : `${c.productIds?.length || 0} ITEMS`}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-end">
+                        <button className="btn btn-sm btn-light-danger border-0 rounded-circle p-2" onClick={() => onDelete(c.id)}>
+                          <i className="bi bi-trash3-fill text-danger fs-5"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {coupons.length === 0 && (
+                    <tr><td colSpan="4" className="text-center py-5 text-muted small">No active campaigns. Create one to drive sales!</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -1433,48 +1387,64 @@ function TeamsPanel({ admins, setAdmins }) {
   };
 
   return (
-    <div className="row g-4 mb-5">
+    <div className="row g-4 mb-5 animate-fade-in">
       <div className="col-lg-4">
-        <div className="card shadow-sm border-0 sticky-top" style={{ top: '160px' }}>
+        <div className="card border-0 shadow-lg sticky-top" style={{ top: '160px', zIndex: 10, borderRadius: '1.25rem' }}>
           <div className="card-body p-4">
-            <h5 className="fw-bold mb-4">Add New Team Member</h5>
-            {error && <div className="alert alert-danger py-2 small">{error}</div>}
+            <div className="d-flex align-items-center gap-3 mb-4">
+              <div className="bg-primary bg-opacity-10 p-2 rounded-3">
+                <i className="bi bi-person-plus text-primary fs-4"></i>
+              </div>
+              <div>
+                <h5 className="fw-extrabold text-dark mb-0">Add Member</h5>
+                <p className="smallest text-muted mb-0">Expand your shop team</p>
+              </div>
+            </div>
+
+            {error && <div className="alert alert-danger py-2 smallest rounded-3 border-0 d-flex align-items-center gap-2">
+              <i className="bi bi-exclamation-circle"></i> {error}
+            </div>}
+
             <form onSubmit={onSubmit}>
               <div className="mb-4">
-                <label className="form-label">Full Name</label>
-                <input
-                  className="form-control"
-                  placeholder="e.g. John Doe"
-                  value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="form-label">Email Address</label>
-                <input
-                  type="email"
-                  className="form-control"
-                  placeholder="e.g. john@example.com"
-                  value={form.email}
-                  onChange={e => setForm({ ...form, email: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="form-label">Password</label>
+                <label className="form-label text-uppercase smallest fw-bold text-muted tracking-widest">Full Name</label>
                 <div className="premium-input-group">
                   <input
+                    className="form-control rounded-pill px-4"
+                    placeholder="Enter full name"
+                    value={form.name}
+                    onChange={e => setForm({ ...form, name: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="mb-4">
+                <label className="form-label text-uppercase smallest fw-bold text-muted tracking-widest">Email Address</label>
+                <div className="premium-input-group">
+                  <input
+                    type="email"
+                    className="form-control rounded-pill px-4"
+                    placeholder="name@store.com"
+                    value={form.email}
+                    onChange={e => setForm({ ...form, email: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="mb-4">
+                <label className="form-label text-uppercase smallest fw-bold text-muted tracking-widest">Secure Password</label>
+                <div className="premium-input-group position-relative">
+                  <input
                     type={showPassword ? "text" : "password"}
-                    className="form-control"
-                    placeholder="••••••••"
+                    className="form-control rounded-pill px-4 pe-5"
+                    placeholder="Minimum 8 characters"
                     value={form.password}
                     onChange={e => setForm({ ...form, password: e.target.value })}
                     required
                   />
                   <button
                     type="button"
-                    className="btn"
+                    className="btn position-absolute end-0 top-50 translate-middle-y me-2 text-muted border-0 bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     <i className={`bi bi-eye${showPassword ? '-slash' : ''}`}></i>
@@ -1482,59 +1452,69 @@ function TeamsPanel({ admins, setAdmins }) {
                 </div>
               </div>
               <div className="mb-4">
-                <label className="form-label">Access Level</label>
+                <label className="form-label text-uppercase smallest fw-bold text-muted tracking-widest">Access Privilege</label>
                 <select
-                  className="form-select text-capitalize"
+                  className="form-select rounded-pill px-4 text-capitalize border-2"
                   value={form.adminLevel}
                   onChange={e => setForm({ ...form, adminLevel: e.target.value })}
                 >
-                  <option value="admin">Standard Admin</option>
-                  <option value="super_admin">Super Admin</option>
+                  <option value="admin">Standard Administrator</option>
+                  <option value="super_admin">Master Super Admin</option>
                 </select>
               </div>
-              <button className="btn btn-primary w-100 py-3 fw-bold h-pill shadow-lg mt-2" disabled={loading}>
-                {loading ? 'Adding...' : 'Add Team Member'}
+              <button className="btn btn-primary w-100 py-3 fw-extrabold rounded-pill shadow-lg mt-2 transition-all hover-scale" disabled={loading}>
+                {loading ? <><span className="spinner-border spinner-border-sm me-2"></span>Wait...</> : 'ACTIVATE MEMBER'}
               </button>
             </form>
           </div>
         </div>
       </div>
+
       <div className="col-lg-8">
-        <div className="card shadow-sm border-0">
+        <div className="card shadow-sm border-0 bg-white" style={{ borderRadius: '1.25rem' }}>
+          <div className="card-header bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+            <div>
+              <h5 className="fw-extrabold text-dark mb-0">The Team</h5>
+              <p className="smallest text-muted mb-0">{admins.length} active administrators</p>
+            </div>
+            <div className="bg-light p-2 rounded-circle">
+              <i className="bi bi-people-fill text-muted"></i>
+            </div>
+          </div>
           <div className="card-body p-0">
             <div className="table-responsive">
               <table className="table table-hover align-middle mb-0">
                 <thead className="bg-light">
                   <tr>
-                    <th className="px-4 py-3">Team Member</th>
-                    <th className="py-3 text-center">Level</th>
-                    <th className="py-3">Joined</th>
-                    <th className="px-4 py-3 text-end">Actions</th>
+                    <th className="px-4 py-3 smallest text-uppercase fw-bold text-muted tracking-wider">Member Details</th>
+                    <th className="py-3 text-center smallest text-uppercase fw-bold text-muted tracking-wider">Role</th>
+                    <th className="py-3 smallest text-uppercase fw-bold text-muted tracking-wider">Join Date</th>
+                    <th className="px-4 py-3 text-end smallest text-uppercase fw-bold text-muted tracking-wider">Management</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="border-top-0">
                   {admins && admins.map(admin => (
-                    <tr key={admin._id}>
+                    <tr key={admin._id} className="transition-all hover-bg-light">
                       <td className="px-4 py-3">
                         <div className="d-flex align-items-center">
-                          <div className="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold me-3" style={{ width: 40, height: 40 }}>
+                          <div className={`rounded-circle d-flex align-items-center justify-content-center fw-extrabold me-3 shadow-sm border border-2 border-white`} style={{ width: 44, height: 44, backgroundColor: admin.adminLevel === 'super_admin' ? '#fee2e2' : '#e0f2fe', color: admin.adminLevel === 'super_admin' ? '#ef4444' : '#0ea5e9' }}>
                             {admin.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div className="fw-bold">{admin.name}</div>
-                            <div className="smallest text-muted">{admin.email}</div>
+                            <div className="fw-bold text-dark">{admin.name}</div>
+                            <div className="smallest text-muted font-monospace">{admin.email}</div>
                           </div>
                         </div>
                       </td>
                       <td className="py-3 text-center">
-                        <span className={`badge rounded-pill ${admin.adminLevel === 'super_admin' ? 'bg-danger bg-opacity-10 text-danger' : 'bg-primary bg-opacity-10 text-primary'}`}>
-                          {admin.adminLevel === 'super_admin' ? 'Super Admin' : 'Admin'}
+                        <span className={`badge rounded-pill px-3 py-1.5 border-0 ${admin.adminLevel === 'super_admin' ? 'bg-danger bg-opacity-10 text-danger' : 'bg-primary bg-opacity-10 text-primary'}`} style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '0.5px' }}>
+                          {admin.adminLevel === 'super_admin' ? 'SUPER' : 'ADMIN'}
                         </span>
                       </td>
-                      <td className="py-3 text-muted small">{new Date(admin.createdAt).toLocaleDateString()}</td>
+                      <td className="py-3 text-muted smallest fw-bold">{new Date(admin.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                       <td className="px-4 py-3 text-end">
-                        <button className="btn btn-sm btn-outline-danger border-0 rounded-circle" onClick={() => onDelete(admin._id)} title="Delete Admin">
-                          <i className="bi bi-trash"></i>
+                        <button className="btn btn-sm btn-light-danger border-0 rounded-circle p-2 transition-all hover-scale" onClick={() => onDelete(admin._id)} title="Remove Access">
+                          <i className="bi bi-person-x-fill text-danger fs-5"></i>
                         </button>
                       </td>
                     </tr>
@@ -1557,25 +1537,22 @@ function CustomersPanel({ customers, setCustomers, setStatus }) {
       const { token } = await adminGenerateCustomerResetToken(user._id);
       const resetLink = `${window.location.origin}/reset-password?token=${token}`;
 
-      const msg = `Hello ${user.name},
+      const msg = `*SPARKLE GIFT SHOP*
+      -----------------
+      Password Reset Request
+      
+      Hello *${user.name}*,
+      
+      We received a request to reset your account password.
+      
+      *Reset Link:*
+      ${resetLink}
+      
+      This link is valid for 24 hours. If you did not request this, please ignore this message.
+      
+      Regards,
+      Team Sparkle`;
 
-        We received a request to reset your Sparkle Gift Shop account password.
-
-        Please use the link below to set a new password:
-        ${resetLink}
-
-        This link is valid for 24 hours only.
-
-        If you did not request this, please ignore this message.
-
-        Thank you,
-        Sparkle Gift Shop Team`;
-
-      // Find the user's phone number from their orders if possible, or we might need it in user model
-      // For now, if we don't have user phone in model, let's try to get it if they have orders
-      // or just open WhatsApp and let admin pick the contact.
-      // But ideally we want wa.me link. Let's assume user might not have phone in User model yet.
-      // Let's check User model again.
       window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
       setStatus('Reset link generated!');
     } catch (err) {
@@ -1584,44 +1561,93 @@ function CustomersPanel({ customers, setCustomers, setStatus }) {
   };
 
   return (
-    <div className="card shadow-sm border-0 bg-white" style={{ borderRadius: '16px' }}>
+    <div className="card shadow-lg border-0 bg-white animate-fade-in overflow-hidden" style={{ borderRadius: '1.5rem' }}>
+      <div className="card-header bg-white py-4 px-4 border-0 d-flex justify-content-between align-items-center">
+        <div>
+          <h5 className="fw-extrabold text-dark mb-0">Customer Base</h5>
+          <p className="smallest text-muted mb-0">{customers?.length || 0} registered patrons</p>
+        </div>
+        <div className="bg-light p-3 rounded-4">
+          <i className="bi bi-people-fill text-primary fs-4"></i>
+        </div>
+      </div>
       <div className="card-body p-0">
-        <div className="table-responsive">
+        {/* Desktop Table View */}
+        <div className="table-responsive d-none d-md-block">
           <table className="table table-hover align-middle mb-0">
             <thead className="bg-light">
               <tr>
-                <th className="px-4 py-3">Customer</th>
-                <th className="py-3">Email</th>
-                <th className="py-3 text-center">Status</th>
-                <th className="px-4 py-3 text-end">Reset</th>
+                <th className="px-4 py-3 smallest text-uppercase fw-bold text-muted tracking-widest">Patron Identity</th>
+                <th className="py-3 smallest text-uppercase fw-bold text-muted tracking-widest">Contact Access</th>
+                <th className="py-3 text-center smallest text-uppercase fw-bold text-muted tracking-widest">Membership Status</th>
+                <th className="px-4 py-3 text-end smallest text-uppercase fw-bold text-muted tracking-widest">Management</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="border-0">
               {customers && customers.length > 0 ? customers.map(user => (
-                <tr key={user._id}>
+                <tr key={user._id} className="transition-all hover-bg-light">
                   <td className="px-4 py-3">
                     <div className="d-flex align-items-center">
-                      <div className="bg-secondary bg-opacity-10 text-secondary rounded-circle d-flex align-items-center justify-content-center fw-bold me-3" style={{ width: 40, height: 40 }}>
+                      <div className="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center fw-extrabold me-3 shadow-sm" style={{ width: 44, height: 44, fontSize: '1.1rem' }}>
                         {user.name.charAt(0).toUpperCase()}
                       </div>
-                      <div className="fw-bold">{user.name}</div>
+                      <div>
+                        <div className="fw-bold text-dark text-truncate" style={{ maxWidth: '150px' }}>{user.name}</div>
+                        <div className="smallest text-muted fw-bold">ID: {user._id.slice(-6).toUpperCase()}</div>
+                      </div>
                     </div>
                   </td>
-                  <td className="py-3 text-muted small">{user.email}</td>
+                  <td className="py-3">
+                    <div className="small text-dark fw-bold mb-0 text-truncate" style={{ maxWidth: '200px' }}>{user.email}</div>
+                    <div className="smallest text-muted">Preferred Channel: Email</div>
+                  </td>
                   <td className="py-3 text-center">
-                    <span className="badge rounded-pill bg-success bg-opacity-10 text-success">Active</span>
+                    <span className="badge rounded-pill bg-success bg-opacity-10 text-success border-0 px-3 py-2 fw-extrabold" style={{ fontSize: '10px' }}>
+                      <i className="bi bi-check-circle-fill me-1"></i>VERIFIED
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-end">
-                    <button className="btn btn-sm btn-outline-primary rounded-pill px-3" onClick={() => onReset(user)}>
-                      <i className="bi bi-key me-1"></i> New Password
+                    <button className="btn btn-sm btn-light border rounded-pill px-3 py-2 fw-extrabold text-primary shadow-sm hover-scale" onClick={() => onReset(user)}>
+                      <i className="bi bi-key-fill me-1"></i> RESET ACCESS
                     </button>
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan="4" className="text-center py-4 text-muted">No customers found.</td></tr>
+                <tr><td colSpan="4" className="text-center py-5 text-muted small">No customers found.</td></tr>
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile List View */}
+        <div className="d-md-none p-3">
+          {customers && customers.length > 0 ? customers.map(user => (
+            <div key={user._id} className="p-3 mb-3 bg-light bg-opacity-50 rounded-4 border border-white shadow-sm">
+              <div className="d-flex align-items-center justify-content-between mb-3">
+                <div className="d-flex align-items-center gap-3">
+                  <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-extrabold shadow-sm" style={{ width: 42, height: 42, fontSize: '1.1rem' }}>
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="overflow-hidden">
+                    <div className="fw-bold text-dark small text-truncate" style={{ maxWidth: '150px' }}>{user.name}</div>
+                    <div className="smallest text-muted fw-bold opacity-50">#{user._id.slice(-6).toUpperCase()}</div>
+                  </div>
+                </div>
+                <span className="badge rounded-pill bg-success bg-opacity-10 text-success border-0 px-2 py-1 fw-extrabold" style={{ fontSize: '8px' }}>
+                  <i className="bi bi-check-circle-fill me-1"></i>VERIFIED
+                </span>
+              </div>
+              <div className="p-2 mb-3 bg-white rounded-3 border border-light shadow-sm overflow-hidden">
+                <div className="smallest text-muted text-uppercase fw-extrabold tracking-widest mb-1 opacity-50" style={{ fontSize: '7px' }}>Account Identifier</div>
+                <div className="small text-dark fw-bold text-truncate" style={{ fontSize: '11px' }}>{user.email}</div>
+              </div>
+              <button className="btn btn-primary w-100 py-3 rounded-pill fw-extrabold shadow-sm d-flex align-items-center justify-content-center gap-2" style={{ fontSize: '12px' }} onClick={() => onReset(user)}>
+                <i className="bi bi-key-fill"></i> RESET ACCESS
+              </button>
+            </div>
+          )) : (
+            <div className="text-center py-5 text-muted smallest fw-bold uppercase">No records found.</div>
+          )}
         </div>
       </div>
     </div>
@@ -2022,48 +2048,68 @@ function OwnerApp() {
     <div className="container-fluid min-vh-100 d-flex flex-column bg-light p-0">
       {status && <div className="alert alert-success status-toast shadow">{status}</div>}
 
-      <nav className="navbar navbar-expand-lg bg-white shadow-sm border-bottom px-3 px-md-5 sticky-top" style={{ zIndex: 1030 }}>
-        <div className="container-fluid p-0">
-          <div className="d-flex align-items-center gap-2 text-decoration-none" style={{ cursor: 'pointer' }} onClick={() => setTab('orders')}>
-            <img src={settings.logoUrl || logo} alt="Logo" className="rounded-circle" style={{ width: 62, height: 62, objectFit: 'cover' }} />
-            <div>
-              <h1 className="h4 fw-bold mb-0 text-dark">{settings.storeName || 'Sparkle Gift Shop'}</h1>
-              <small className="text-primary fw-bold  h5" >Admin Dashboard</small>
+      <nav className="navbar bg-white shadow-sm border-bottom px-1 px-md-4 sticky-top overflow-hidden" style={{ zIndex: 1050 }}>
+        <div className="container-fluid d-flex flex-nowrap align-items-center justify-content-between px-1 px-md-0">
+          <div className="d-flex align-items-center gap-3 text-decoration-none overflow-hidden flex-nowrap">
+            <div className="flex-shrink-0 position-relative">
+              <img src={settings.logoUrl || logo} alt="Logo" className="admin-header-logo rounded-circle border border-primary border-opacity-10 shadow-sm" style={{ objectFit: 'cover' }} />
+              <div className="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle" style={{ width: '20%', height: '20%', borderWidth: '2px' }}></div>
+            </div>
+            <div className="overflow-hidden d-flex flex-column">
+              <h3 className="admin-header-title fw-extrabold mb-0 text-dark tracking-tight text-truncate fw-bold">{settings.storeName || 'Sparkle Gift Shop'}</h3>
+              <span className="badge mt-1 bg-primary bg-opacity-10 text-primary border-0 rounded-pill px-2 py-0.5 d-none d-sm-inline-block" style={{ fontSize: '10px', width: 'fit-content' }}>ADMIN CONTROL</span>
             </div>
           </div>
-          <div className="ms-auto">
-            <Link to="/" target="_blank" className="btn btn-sm btn-outline-primary rounded-pill px-3 me-2">
-              <i className="bi bi-shop"></i> <span className="d-none d-sm-inline">View Shop</span>
+          <div className="d-flex align-items-center gap-2 flex-shrink-0">
+            <Link to="/" target="_blank" className="btn btn-sm btn-light border-0 rounded-pill px-3 py-2 fw-bold text-dark transition-all hover-bg-primary hover-text-white shadow-sm d-none d-md-flex align-items-center gap-2">
+              <i className="bi bi-eye"></i> View Shop
             </Link>
+            <div className="vr d-none d-md-block mx-1" style={{ height: '30px', opacity: 0.1 }}></div>
             <button
-              className="btn btn-sm btn-danger rounded-pill px-3"
+              className="admin-logout-btn btn btn-danger rounded-pill transition-all hover-scale d-flex align-items-center justify-content-center gap-2 border-0"
               onClick={() => {
                 localStorage.removeItem('sparkle_token');
                 localStorage.removeItem('sparkle_user');
                 window.location.href = '/admin/login';
               }}
+              style={{ backgroundColor: '#ee4444' }}
             >
-              <i className="bi bi-box-arrow-right"></i> <span className="d-none d-sm-inline">Logout</span>
+              <i className="bi bi-power fs-5 text-white"></i>
+              <span className="d-none d-md-inline fw-bold text-uppercase" style={{ fontSize: '12px', letterSpacing: '0.5px' }}>Logout</span>
             </button>
           </div>
         </div>
       </nav>
 
-      <div className="bg-white border-bottom shadow-sm sticky-top" style={{ top: '65px', zIndex: 1020 }}>
-        <div className="container-fluid px-3 px-md-5">
-          <div className="d-flex align-items-center justify-content-start justify-content-md-center gap-2 overflow-auto py-3 mt-3 no-scrollbar">
+      <div className="admin-sticky-offset bg-white border-bottom shadow-sm sticky-top py-3" style={{ zIndex: 1040 }}>
+        <div className="container-fluid px-2 h-100">
+          <div className="d-flex align-items-center justify-content-start justify-content-md-center gap-1 gap-md-3 py-0 overflow-x-auto no-scrollbar">
             {[
-              { id: 'orders', icon: 'bi-cart-check', label: 'Orders' },
-              { id: 'products', icon: 'bi-box-seam', label: 'Products' },
-              { id: 'combos', icon: 'bi-gift', label: 'Combo Store' },
-              { id: 'customers', icon: 'bi-person-badge', label: 'Customers' },
-              { id: 'coupons', icon: 'bi-ticket-perforated', label: 'Coupons' },
-              { id: 'teams', icon: 'bi-people', label: 'Teams' },
-              { id: 'reports', icon: 'bi-graph-up', label: 'Reports' },
-              { id: 'settings', icon: 'bi-gear', label: 'Settings' }
+              { id: 'orders', icon: 'bi-grid-1x2-fill', label: 'Orders' },
+              { id: 'products', icon: 'bi-box-seam-fill', label: 'Stock' },
+              { id: 'combos', icon: 'bi-stars', label: 'Combos' },
+              { id: 'customers', icon: 'bi-people-fill', label: 'Users' },
+              { id: 'coupons', icon: 'bi-ticket-detailed-fill', label: 'Coupons' },
+              { id: 'teams', icon: 'bi-shield-lock-fill', label: 'Staff' },
+              { id: 'reports', icon: 'bi-bar-chart-steps', label: 'Reports' },
+              { id: 'settings', icon: 'bi-sliders', label: 'Setup' }
             ].map(t => (
-              <button key={t.id} className={`btn btn-sm d-flex align-items-center gap-2 py-2 px-3 border-0 rounded-pill ${tab === t.id ? 'btn-primary' : 'btn-light text-secondary'}`} onClick={() => setTab(t.id)} style={{ whiteSpace: 'nowrap' }}>
-                <i className={`bi ${t.icon}`}></i><span>{t.label}</span>
+              <button
+                key={t.id}
+                className={`d-flex align-items-center gap-2 py-2 px-3 px-md-4 rounded-3 border-0 transition-all ${tab === t.id ? 'bg-primary shadow-sm' : 'bg-transparent'}`}
+                onClick={() => setTab(t.id)}
+                style={{
+                  whiteSpace: 'nowrap',
+                  fontSize: '13px',
+                  fontWeight: tab === t.id ? '800' : '600',
+                  color: tab === t.id ? '#fff' : '#6c757d',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  minWidth: 'fit-content'
+                }}
+              >
+                <i className={`bi ${t.icon}`} style={{ fontSize: '1rem', color: tab === t.id ? '#fff' : '#adb5bd' }}></i>
+                <span className="fw-bold">{t.label}</span>
               </button>
             ))}
           </div>
@@ -2071,29 +2117,29 @@ function OwnerApp() {
       </div>
 
       <main className="flex-grow-1 p-0 bg-light overflow-y-auto overflow-x-hidden">
-        <div className="d-flex justify-content-between align-items-center px-3 px-md-5 py-3">
+        <div className="container-fluid d-flex flex-column flex-sm-row justify-content-between align-items-sm-center px-2 px-md-4 py-3 gap-3">
           <div className="d-flex align-items-center gap-2">
-            <h3 className="fw-bold mb-0 text-dark text-capitalize">{tab}</h3>
+            <h3 className="fw-extrabold mb-0 text-dark text-capitalize" style={{ fontSize: '1.5rem' }}>{tab}</h3>
             {tab === 'orders' && (
-              <span className="badge bg-white shadow-sm border text-success rounded-pill d-flex align-items-center px-2 py-1" style={{ fontSize: '10px' }}>
+              <span className="badge bg-white shadow-sm border text-success rounded-pill d-flex align-items-center px-2 py-1" style={{ fontSize: '9px' }}>
                 <span className="live-indicator"></span> LIVE
               </span>
             )}
             {isRefreshing && <div className="spinner-border spinner-border-sm text-primary opacity-50 ms-2" role="status"></div>}
           </div>
           {(tab === 'products' || tab === 'combos') && !showProductForm && (
-            <button className="btn btn-primary rounded-pill px-4" onClick={() => {
+            <button className="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm" style={{ fontSize: '14px' }} onClick={() => {
               setForm({ ...emptyProduct, isCombo: tab === 'combos', category: tab === 'combos' ? 'Combos' : '' });
               setShowProductForm(true);
               setEditingId(null);
             }}>
-              Add {tab === 'combos' ? 'Combo' : 'Product'}
+              <i className="bi bi-plus-lg me-1"></i> Add {tab === 'combos' ? 'Combo' : 'Product'}
             </button>
           )}
         </div>
 
 
-        <div className="container-fluid px-3 px-md-5">
+        <div className="container-fluid px-2 px-md-4">
           {loading ? (
             <div className="text-center py-5">
               <div className="spinner-border text-primary" role="status"></div>
@@ -2118,7 +2164,7 @@ function OwnerApp() {
                 </div>
               </div>
 
-              <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xl-6 g-3 mb-5">
+              <div className="row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xl-6 g-2 g-md-3 mb-5">
                 {products.filter(p => {
                   const matchQuery = !query || p.name.toLowerCase().includes(query.toLowerCase());
                   if (tab === 'combos') return matchQuery && (p.isCombo || p.category === 'Combos');
@@ -2126,67 +2172,70 @@ function OwnerApp() {
                   return false;
                 }).slice(0, query ? 200 : 50).map(p => (
                   <div className="col" key={p.id}>
-                    <div className="card h-100 border-0 shadow-sm overflow-hidden" style={{ borderRadius: '16px' }}>
-                      <div className="position-relative bg-light" style={{ aspectRatio: '1/1', overflow: 'hidden' }}>
+                    <div className="card h-100 border-0 shadow-sm transition-all hover-translate-y overflow-hidden mobile-medium-card" style={{ borderRadius: '1rem' }}>
+                      <div className="position-relative bg-light group" style={{ aspectRatio: '1/1', overflow: 'hidden' }}>
                         <img
                           src={p.image || logo}
                           alt={p.name}
                           loading="lazy"
-                          className="w-100 h-100 object-fit-contain"
-                          style={{ backgroundColor: '#f8f9fa' }}
+                          className="w-100 h-100 object-fit-cover transition-all"
                         />
-                        <div className="position-absolute top-0 end-0 m-2 d-flex flex-column gap-1">
+                        <div className="position-absolute inset-0 bg-dark bg-opacity-10 opacity-0 group-hover-opacity-100 transition-all"></div>
+                        <div className="position-absolute top-0 end-0 m-2 d-flex flex-column gap-2" style={{ zIndex: 5 }}>
                           <button
                             type="button"
-                            className="btn bg-transparent btn-sm rounded-circle border-0"
-                            style={{ width: '36px', height: '36px' }}
+                            className="btn btn-white btn-sm rounded-circle shadow-sm border-0 d-flex align-items-center justify-content-center hover-scale"
+                            style={{ width: '32px', height: '32px' }}
                             onClick={() => onEdit(p)}
                           >
-                            <i className="bi bi-pencil-fill text-primary" style={{ fontSize: '12px' }}></i>
+                            <i className="bi bi-pencil-fill text-primary" style={{ fontSize: '11px' }}></i>
                           </button>
                           <button
                             type="button"
-                            className="btn bg-transparent btn-sm rounded-circle border-0"
-                            style={{ width: '36px', height: '36px' }}
+                            className="btn btn-white btn-sm rounded-circle shadow-sm border-0 d-flex align-items-center justify-content-center hover-scale"
+                            style={{ width: '32px', height: '32px' }}
                             onClick={() => onDelete(p.id)}
                           >
-                            <i className="bi bi-trash3-fill text-danger" style={{ fontSize: '12px' }}></i>
+                            <i className="bi bi-trash3-fill text-danger" style={{ fontSize: '11px' }}></i>
                           </button>
                         </div>
                         <div className="position-absolute top-0 start-0 m-2 d-flex flex-column gap-1">
-                          <span className="badge bg-white text-dark shadow-sm border fw-bold" style={{ fontSize: '10px' }}>
+                          <span className="badge bg-white bg-opacity-90 text-dark shadow-sm border-0 rounded-pill px-2 py-1 fw-bold" style={{ fontSize: '9px', backdropFilter: 'blur(4px)' }}>
                             {p.category}
                           </span>
                           {p.isCombo && (
-                            <span className="badge bg-warning text-dark shadow-sm border-0 fw-bold" style={{ fontSize: '9px' }}>
-                              <i className="bi bi-stars me-1"></i>COMBO
+                            <span className="badge bg-primary text-white shadow-sm border-0 rounded-pill px-2 py-1 fw-bold d-flex align-items-center gap-1" style={{ fontSize: '9px' }}>
+                              <i className="bi bi-stars" style={{ fontSize: '10px' }}></i>COMBO
                             </span>
                           )}
                         </div>
                       </div>
                       <div className="card-body p-3">
-                        <div className="d-flex justify-content-between align-items-start mb-2">
-                          <h6 className="fw-bold text-dark mb-0 text-truncate pe-2" title={p.name}>{p.name}</h6>
-                          <div className="text-end">
-                            <span className="d-block fw-extrabold text-primary" style={{ fontSize: '14px' }}>₹{p.price}</span>
-                            <span className="smallest text-muted font-monospace" style={{ fontSize: '10px' }}>{p.id}</span>
+                        <div className="mb-2">
+                          <h6 className="fw-extrabold text-dark mb-1 text-truncate" title={p.name} style={{ fontSize: '0.9rem' }}>{p.name}</h6>
+                          <div className="d-flex align-items-center justify-content-between">
+                            <span className="fw-extrabold text-primary" style={{ fontSize: '1.1rem' }}>₹{p.price}</span>
+                            <span className="smallest text-muted font-monospace opacity-50" style={{ fontSize: '9px' }}>{p.id.slice(-6).toUpperCase()}</span>
                           </div>
                         </div>
+
                         {p.isCombo && p.comboItems && p.comboItems.length > 0 && (
-                          <div className="mt-2 p-1 bg-light rounded border">
-                            <div className="smallest fw-bold text-primary text-uppercase mb-1" style={{ fontSize: '7px' }}>Items:</div>
-                            {p.comboItems.map((ci, idx) => (
-                              <div key={idx} className="smallest text-muted text-truncate d-flex justify-content-between" style={{ fontSize: '9px' }}>
-                                <span>• {ci.name} x{ci.quantity}</span>
-                                <span className="fw-bold">₹{ci.price || 0}</span>
-                              </div>
-                            ))}
+                          <div className="mt-2 p-2 bg-light rounded-3 border border-light">
+                            <div className="smallest fw-extrabold text-muted text-uppercase mb-1" style={{ fontSize: '8px', letterSpacing: '0.5px' }}>Includes {p.comboItems.length} items</div>
+                            <div className="d-flex flex-wrap gap-1">
+                              {p.comboItems.slice(0, 3).map((ci, idx) => (
+                                <img key={idx} src={ci.image || logo} className="rounded-circle border border-white border-2 shadow-sm" style={{ width: '20px', height: '20px', objectFit: 'cover', marginLeft: idx > 0 ? '-8px' : '0' }} title={ci.name} />
+                              ))}
+                              {p.comboItems.length > 3 && <div className="rounded-circle bg-white border border-light shadow-sm d-flex align-items-center justify-content-center fw-bold text-muted" style={{ width: '20px', height: '20px', fontSize: '8px', marginLeft: '-8px' }}>+{p.comboItems.length - 3}</div>}
+                            </div>
                           </div>
                         )}
-                        {p.variants && p.variants.length > 0 && (
+
+                        {!p.isCombo && p.variants && p.variants.length > 0 && (
                           <div className="d-flex align-items-center gap-1 mt-2">
-                            <i className="bi bi-layers text-muted smallest"></i>
-                            <span className="smallest text-muted fw-bold">{p.variants.length} Variants</span>
+                            <div className="bg-success bg-opacity-10 text-success rounded-pill px-2 py-0.5 smallest fw-bold" style={{ fontSize: '9px' }}>
+                              <i className="bi bi-stack me-1"></i>{p.variants.length} Variants
+                            </div>
                           </div>
                         )}
                       </div>
@@ -2213,34 +2262,44 @@ function OwnerApp() {
 
           {tab === 'orders' && (
             <>
-              <div className="card shadow-sm border-0 mb-4 bg-white">
-                <div className="card-body d-flex flex-wrap align-items-center justify-content-between gap-3 py-3 px-4">
-                  <div className="d-flex align-items-center gap-4">
-                    <div>
-                      <small className="text-muted text-uppercase fw-bold d-block" style={{ fontSize: '11px' }}>Total Invoices</small>
-                      <h4 className="fw-bold mb-0 text-dark">{filteredOrders.length}</h4>
+              <div className="card shadow-sm border-0 mb-5 bg-white overflow-hidden" style={{ borderRadius: '1.5rem' }}>
+                <div className="card-body p-0">
+                  <div className="d-flex flex-column flex-lg-row">
+                    {/* Left: Stats */}
+                    <div className="d-flex flex-grow-1 border-bottom border-lg-0">
+                      <div className="flex-grow-1 p-4 text-center border-end border-light">
+                        <div className="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style={{ width: 40, height: 40 }}>
+                          <i className="bi bi-receipt-cutoff fs-5"></i>
+                        </div>
+                        <small className="text-muted text-uppercase fw-extrabold d-block mb-1" style={{ fontSize: '9px', letterSpacing: '1px' }}>Total Invoices</small>
+                        <h3 className="fw-extrabold mb-0 text-dark">{filteredOrders.length}</h3>
+                      </div>
+                      <div className="flex-grow-1 p-4 text-center">
+                        <div className="bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style={{ width: 40, height: 40 }}>
+                          <i className="bi bi-cash-stack fs-5"></i>
+                        </div>
+                        <small className="text-muted text-uppercase fw-extrabold d-block mb-1" style={{ fontSize: '9px', letterSpacing: '1px' }}>Daily Volume</small>
+                        <h3 className="fw-extrabold mb-0 text-success">₹{filteredOrders.reduce((sum, o) => sum + (o.total || 0), 0).toFixed(0)}</h3>
+                      </div>
                     </div>
-                    <div className="border-start ps-4">
-                      <small className="text-muted text-uppercase fw-bold d-block" style={{ fontSize: '11px' }}>Collection (with Delivery)</small>
-                      <h4 className="fw-bold mb-0 text-primary">₹{filteredOrders.reduce((sum, o) => sum + (o.total || 0), 0).toFixed(2)}</h4>
-                    </div>
-                  </div>
 
-                  <div className="ms-auto d-flex align-items-center gap-2">
-                    <span className="small fw-bold text-muted text-uppercase">Page Size:</span>
-                    <select
-                      className="form-select form-select-sm w-auto shadow-none border"
-                      onChange={(e) => {
-                        // Placeholder for page size logic
-                      }}
-                      defaultValue="50"
-                    >
-                      <option value="20">20</option>
-                      <option value="50">50</option>
-                      <option value="100">100</option>
-                    </select>
-                    <span className="small fw-bold text-muted text-uppercase ms-2">Filter by Date:</span>
-                    <input type="date" className="form-control form-control-sm w-auto shadow-none border" value={orderFilterDate} onChange={e => setOrderFilterDate(e.target.value)} />
+                    {/* Right: Analytical Filters */}
+                    <div className="bg-light bg-opacity-50 p-4 d-flex flex-column flex-sm-row align-items-center justify-content-center gap-4 border-start border-light min-w-lg-400">
+                      <div className="w-100 w-sm-auto">
+                        <label className="smallest fw-extrabold text-muted text-uppercase d-block mb-2">Display Limit</label>
+                        <select className="form-select border-0 shadow-sm rounded-pill px-3 fw-bold" style={{ fontSize: '13px' }} defaultValue="50">
+                          <option>20</option>
+                          <option>50</option>
+                          <option>100</option>
+                        </select>
+                      </div>
+                      <div className="w-100 w-sm-auto">
+                        <label className="smallest fw-extrabold text-muted text-uppercase d-block mb-2">Filter by Date</label>
+                        <div className="premium-input-group">
+                          <input type="date" className="form-control form-control-sm border-0 bg-white" value={orderFilterDate} onChange={e => setOrderFilterDate(e.target.value)} style={{ fontSize: '13px' }} />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
