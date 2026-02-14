@@ -56,8 +56,10 @@ function ProductCard({ product, onAdd, isWishlisted, onWishlistToggle, setStatus
     }
 
     setAdding(true);
-    await onAdd(product.id, selectedVariant);
-    setTimeout(() => setAdding(false), 1500);
+    // onAdd handles optimistic update and API call internally
+    // We don't await it here to ensure the button reverts quickly even on slow networks
+    onAdd(product.id, selectedVariant);
+    setTimeout(() => setAdding(false), 1000);
   };
 
   return (
