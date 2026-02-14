@@ -156,9 +156,6 @@ export default defineConfig({
 
     // Report compressed size
     reportCompressedSize: true,
-
-    // Optimize CSS
-    cssMinify: 'lightningcss',
   },
 
   // Optimize dependencies
